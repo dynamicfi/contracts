@@ -5,6 +5,18 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+/**
+ ________      ___    ___ ________   ________  _____ ______   ___  ________     
+|\   ___ \    |\  \  /  /|\   ___  \|\   __  \|\   _ \  _   \|\  \|\   ____\    
+\ \  \_|\ \   \ \  \/  / | \  \\ \  \ \  \|\  \ \  \\\__\ \  \ \  \ \  \___|    
+ \ \  \ \\ \   \ \    / / \ \  \\ \  \ \   __  \ \  \\|__| \  \ \  \ \  \       
+  \ \  \_\\ \   \/  /  /   \ \  \\ \  \ \  \ \  \ \  \    \ \  \ \  \ \  \____  
+   \ \_______\__/  / /      \ \__\\ \__\ \__\ \__\ \__\    \ \__\ \__\ \_______\
+    \|_______|\___/ /        \|__| \|__|\|__|\|__|\|__|     \|__|\|__|\|_______|
+             \|___|/                                                            
+
+ */
+
 abstract contract DyToken is ERC20 {
     using SafeMath for uint256;
 
@@ -39,27 +51,59 @@ abstract contract DyToken is ERC20 {
         return amount_.mul(totalDeposits()).div(totalSupply());
     }
 
+    /**
+     * @notice Sender supplies assets into the market and receives dyTokens in exchange
+     * @param amountUnderlying_ The amount of the underlying asset to supply
+     */
     function mint(uint256 amountUnderlying_) external {
         require(amountUnderlying_ > 0, "amountUnderlying_ > 0");
         uint256 _mintTokens = getSharesForDepositTokens(amountUnderlying_);
         _doTransferIn(_msgSender(), amountUnderlying_);
         _mint(_msgSender(), _mintTokens);
+        _stakeDepositTokens(amountUnderlying_);
         emit Mint(_msgSender(), amountUnderlying_, _mintTokens);
     }
 
+    /**
+     * @notice Sender redeems dyTokens in exchange for the underlying asset
+     * @param amount_ The number of dyTokens to redeem into underlying
+     */
     function redeem(uint256 amount_) external {
         require(amount_ > 0, "amount_ > 0");
         _burn(_msgSender(), amount_);
         uint256 _amountUnderlying = getDepositTokensForShares(amount_);
         _doTransferOut(payable(_msgSender()), _amountUnderlying);
-        
+        _withdrawDepositTokens(_amountUnderlying);
         emit Redeem(_msgSender(), amount_, _amountUnderlying);
     }
 
+    /**
+     * @notice Stake underlying asset to a protocol
+     * @param amountUnderlying_ The amount of the underlying asset to supply
+     */
+    function _stakeDepositTokens(uint256 amountUnderlying_) virtual internal;
+
+    /**
+     * @notice Withdraw underlying asset from a protocol
+     * @param amountUnderlying_ The amount of the underlying asset to supply
+     */
+    function _withdrawDepositTokens(uint256 amountUnderlying_) virtual internal;
+
+     /**
+     * @notice This function returns a snapshot of last available quotes
+     * @return total deposits available on the contract
+     */
     function totalDeposits() virtual public view returns (uint256);
 
+    /**
+     * @dev Performs a transfer in, reverting upon failure.
+     *  This may revert due to insufficient balance or insufficient allowance.
+     */
     function _doTransferIn(address from_, uint256 amount_) virtual internal;
 
+    /**
+     * @dev Performs a transfer out, reverting upon failure.
+     */
     function _doTransferOut(address payable to_, uint256 amount_) virtual internal;
 
 }

@@ -6,7 +6,19 @@ import "./DyToken.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract DyERC20 is DyToken {
+/**
+ ________      ___    ___ ________   ________  _____ ______   ___  ________     
+|\   ___ \    |\  \  /  /|\   ___  \|\   __  \|\   _ \  _   \|\  \|\   ____\    
+\ \  \_|\ \   \ \  \/  / | \  \\ \  \ \  \|\  \ \  \\\__\ \  \ \  \ \  \___|    
+ \ \  \ \\ \   \ \    / / \ \  \\ \  \ \   __  \ \  \\|__| \  \ \  \ \  \       
+  \ \  \_\\ \   \/  /  /   \ \  \\ \  \ \  \ \  \ \  \    \ \  \ \  \ \  \____  
+   \ \_______\__/  / /      \ \__\\ \__\ \__\ \__\ \__\    \ \__\ \__\ \_______\
+    \|_______|\___/ /        \|__| \|__|\|__|\|__|\|__|     \|__|\|__|\|_______|
+             \|___|/                                                            
+
+ */
+
+abstract contract DyERC20 is DyToken {
     using SafeERC20 for IERC20;
     address public underlying;
 
@@ -28,9 +40,5 @@ contract DyERC20 is DyToken {
             to_,
             amount_
         );
-    }
-
-    function totalDeposits () virtual override public view returns (uint256) {
-        return IERC20(underlying).balanceOf(address(this));
     }
 }
