@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -17,13 +18,26 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
  */
 
-abstract contract DyToken is ERC20 {
+abstract contract DyToken is ERC20, Ownable {
     using SafeMath for uint256;
 
-    event Mint(address sender, uint256 amountUnderlying, uint256 amountToken);
-    event Redeem(address sender, uint256 amount, uint256 amountUnderlying);
+    bool public depositEnable;
+
+    event Deposit(address sender, uint256 amountUnderlying, uint256 amountToken);
+    event Withdraw(address sender, uint256 amount, uint256 amountUnderlying);
+    event DepositsEnabled(bool newValue);
 
     constructor(string memory name_, string memory symbol_) ERC20 (name_, symbol_) {}
+
+    /**
+     * @notice Enable/disable deposits
+     * @param newValue bool
+     */
+    function updateDepositsEnabled(bool newValue) public onlyOwner {
+        require(depositEnable != newValue, "DyToken::Value already updated");
+        depositEnable = newValue;
+        emit DepositsEnabled(newValue);
+    }
 
     /**
      * @notice Calculate receipt tokens for a given amount of deposit tokens
@@ -55,26 +69,27 @@ abstract contract DyToken is ERC20 {
      * @notice Sender supplies assets into the market and receives dyTokens in exchange
      * @param amountUnderlying_ The amount of the underlying asset to supply
      */
-    function mint(uint256 amountUnderlying_) external {
-        require(amountUnderlying_ > 0, "amountUnderlying_ > 0");
+    function deposit(uint256 amountUnderlying_) external {
+        require(depositEnable == true, "DyBEP20Venus::deposit");
+        require(amountUnderlying_ > 0, "DyToken::amountUnderlying_ > 0");
         uint256 _mintTokens = getSharesForDepositTokens(amountUnderlying_);
         _doTransferIn(_msgSender(), amountUnderlying_);
         _mint(_msgSender(), _mintTokens);
         _stakeDepositTokens(amountUnderlying_);
-        emit Mint(_msgSender(), amountUnderlying_, _mintTokens);
+        emit Deposit(_msgSender(), amountUnderlying_, _mintTokens);
     }
 
     /**
      * @notice Sender redeems dyTokens in exchange for the underlying asset
      * @param amount_ The number of dyTokens to redeem into underlying
      */
-    function redeem(uint256 amount_) external {
-        require(amount_ > 0, "amount_ > 0");
+    function withdraw(uint256 amount_) external {
+        require(amount_ > 0, "DyToken::amount_ > 0");
         _burn(_msgSender(), amount_);
         uint256 _amountUnderlying = getDepositTokensForShares(amount_);
         _doTransferOut(payable(_msgSender()), _amountUnderlying);
         _withdrawDepositTokens(_amountUnderlying);
-        emit Redeem(_msgSender(), amount_, _amountUnderlying);
+        emit Withdraw(_msgSender(), amount_, _amountUnderlying);
     }
 
     /**

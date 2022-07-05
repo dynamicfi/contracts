@@ -20,10 +20,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 abstract contract DyERC20 is DyToken {
     using SafeERC20 for IERC20;
-    address public underlying;
+    IERC20 public underlying;
 
     constructor(address underlying_, string memory name_, string memory symbol_) DyToken(name_, symbol_) {
-        underlying = underlying_;
+        underlying = IERC20(underlying_);
     }
 
     function _doTransferIn(address from_, uint amount_) virtual override internal {

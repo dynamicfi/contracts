@@ -14,8 +14,6 @@ pragma solidity ^0.8.13;
 
  */
 
-interface ITokenVenus {
-    function balanceOfUnderlying(address owner) external returns (uint);
-    function mint(uint mintAmount) external returns (uint);
-    function redeemUnderlying(uint redeemAmount) external returns (uint);
+interface IVenusUnitroller {
+    function markets(address vTokenAddress) external view returns (bool, uint256);
 }
