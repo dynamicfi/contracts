@@ -14,6 +14,7 @@ contract DynamicSwap is Ownable {
     address private immutable WETH;
     address private immutable ROUTER;
     uint256 private _fee;
+    uint256 private decimal = 10e18;
 
     constructor(
         address router_,
@@ -50,8 +51,10 @@ contract DynamicSwap is Ownable {
             path[2] = tokenOut_;
         }
 
+        uint256 _amountIn = amountIn_ - (amountIn_ * (_fee / decimal));
+
         IUniswapV2Router(ROUTER).swapExactTokensForTokens(
-            amountIn_,
+            _amountIn,
             amountOutMin_,
             path,
             to_,
@@ -65,7 +68,9 @@ contract DynamicSwap is Ownable {
         address to_,
         uint256 deadline_
     ) external payable {
-        (bool success, ) = ROUTER.call{value: msg.value}(
+        uint256 _amountIn = msg.value - (msg.value * (_fee / decimal));
+
+        (bool success, ) = ROUTER.call{value: _amountIn}(
             abi.encodeWithSignature(
                 "swapExactETHForTokens(uint256 amountOutMin,address[] calldata path,address to,uint256 deadline)",
                 amountOutMin_,
@@ -84,10 +89,12 @@ contract DynamicSwap is Ownable {
         address to_,
         uint256 deadline_
     ) external {
+        uint256 _amountIn = amountIn_ - (amountIn_ * (_fee / decimal));
+
         (bool success, ) = ROUTER.call(
             abi.encodeWithSignature(
                 "swapExactTokensForETH(uint256 amountIn,uint256 amountOutMin,address[] calldata path,address to,uint256 deadline)",
-                amountIn_,
+                _amountIn,
                 amountOutMin_,
                 path_,
                 to_,
@@ -102,5 +109,10 @@ contract DynamicSwap is Ownable {
             receipt_,
             IERC20(token_).balanceOf(address(this))
         );
+    }
+
+    function updateFee(uint256 fee_) public onlyOwner {
+        require(fee_ <= decimal, "fee <= decimal");
+        _fee = fee_;
     }
 }
