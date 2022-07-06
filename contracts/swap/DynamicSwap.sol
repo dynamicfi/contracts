@@ -6,11 +6,20 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./UniswapInterface.sol";
 
+/**
+ ________      ___    ___ ________   ________  _____ ______   ___  ________     
+|\   ___ \    |\  \  /  /|\   ___  \|\   __  \|\   _ \  _   \|\  \|\   ____\    
+\ \  \_|\ \   \ \  \/  / | \  \\ \  \ \  \|\  \ \  \\\__\ \  \ \  \ \  \___|    
+ \ \  \ \\ \   \ \    / / \ \  \\ \  \ \   __  \ \  \\|__| \  \ \  \ \  \       
+  \ \  \_\\ \   \/  /  /   \ \  \\ \  \ \  \ \  \ \  \    \ \  \ \  \ \  \____  
+   \ \_______\__/  / /      \ \__\\ \__\ \__\ \__\ \__\    \ \__\ \__\ \_______\
+    \|_______|\___/ /        \|__| \|__|\|__|\|__|\|__|     \|__|\|__|\|_______|
+             \|___|/                                                            
+ */
+
+
 contract DynamicSwap is Ownable {
     using SafeERC20 for IERC20;
-    // address private constant UNISWAP_V2_ROUTER =
-    //     0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
-    // address private immutable WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address private immutable WETH;
     address private immutable ROUTER;
     uint256 private _fee;
