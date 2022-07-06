@@ -15,5 +15,6 @@ pragma solidity ^0.8.13;
  */
 
 interface IVenusUnitroller {
+    function enterMarkets(address[] memory vTokens) external returns (uint256[] memory);
     function markets(address vTokenAddress) external view returns (bool, uint256);
 }

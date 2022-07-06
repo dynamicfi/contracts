@@ -56,6 +56,8 @@ contract DyBEP20Venus is DyERC20 {
             leverageSettings_.leverageBips,
             leverageSettings_.leverageBips.mul(990).div(1000) //works as long as leverageBips > 1000
         );
+        _enterMarket();
+        updateDepositsEnabled(true);
     }
 
     function totalDeposits() public view virtual override returns (uint256) {
@@ -87,6 +89,12 @@ contract DyBEP20Venus is DyERC20 {
         leverageLevel = leverageLevel_;
         leverageBips = leverageBips_;
         redeemLimitSafetyMargin = redeemLimitSafetyMargin_;
+    }
+
+    function _enterMarket() internal {
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(tokenDelegator);
+        rewardController.enterMarkets(tokens);
     }
 
     function _stakeDepositTokens(uint256 amountUnderlying_)
