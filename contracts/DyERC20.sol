@@ -4,7 +4,6 @@ pragma solidity ^0.8.13;
 
 import "./DyToken.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -19,7 +18,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
  */
 
 abstract contract DyERC20 is DyToken {
-    using SafeERC20 for IERC20;
     IERC20 public underlying;
 
     constructor(address underlying_, string memory name_, string memory symbol_) DyToken(name_, symbol_) {
@@ -27,18 +25,10 @@ abstract contract DyERC20 is DyToken {
     }
 
     function _doTransferIn(address from_, uint amount_) virtual override internal {
-        IERC20(underlying).safeTransferFrom(
-            from_,
-            address(this),
-            amount_
-        );
+       require(underlying.transferFrom(from_, address(this), amount_), "DyERC20::_doTransferIn");
     }
 
     function _doTransferOut(address payable to_, uint amount_) virtual override internal {
-        IERC20(underlying).safeTransferFrom(
-            address(this),
-            to_,
-            amount_
-        );
+        require(underlying.transfer(to_, amount_), "DyERC20::_doTransferOut");
     }
 }

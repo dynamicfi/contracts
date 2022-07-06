@@ -23,7 +23,6 @@ import "./interfaces/IVenusUnitroller.sol";
 
 contract DyBEP20Venus is DyERC20 {
     using SafeMath for uint256;
-    using SafeERC20 for IERC20;
 
     struct LeverageSettings {
         uint256 leverageLevel;
@@ -61,8 +60,16 @@ contract DyBEP20Venus is DyERC20 {
     }
 
     function totalDeposits() public view virtual override returns (uint256) {
-        (uint256 balance, uint256 borrowed) = _getAccountData();
-        return balance.sub(borrowed);
+        (, uint256 internalBalance, uint256 borrow, uint256 exchangeRate) = tokenDelegator.getAccountSnapshot(
+            address(this)
+        );
+        return internalBalance.mul(exchangeRate).div(1e18).sub(borrow);
+    }
+
+    function _totalDepositsFresh() internal override returns (uint256) {
+        uint256 borrow = tokenDelegator.borrowBalanceCurrent(address(this));
+        uint256 balance = tokenDelegator.balanceOfUnderlying(address(this));
+        return balance.sub(borrow);
     }
 
     function updateLeverage(
@@ -115,7 +122,7 @@ contract DyBEP20Venus is DyERC20 {
         uint256 lendTarget = balance.sub(borrowed).mul(leverageLevel).div(
             leverageBips
         );
-        IERC20(underlying).approve(address(tokenDelegator), lendTarget);
+        underlying.approve(address(tokenDelegator), lendTarget);
         while (balance < lendTarget) {
             uint256 toBorrowAmount = _getBorrowable(
                 balance,
@@ -145,11 +152,11 @@ contract DyBEP20Venus is DyERC20 {
 
     function _getAccountData()
         internal
-        view
-        returns (uint256 balance, uint256 borrowed)
+        returns (uint256, uint256)
     {
-        balance = tokenDelegator.balanceOfUnderlying(address(this));
-        borrowed = tokenDelegator.borrowBalanceCurrent(address(this));
+        uint256 balance = tokenDelegator.balanceOfUnderlying(address(this));
+        uint256 borrowed = tokenDelegator.borrowBalanceCurrent(address(this));
+        return (balance, borrowed);
     }
 
     function _getBorrowable(
@@ -174,7 +181,7 @@ contract DyBEP20Venus is DyERC20 {
         override
     {
         require(
-            amountUnderlying_ > minMinting,
+            amountUnderlying_ >= minMinting,
             "DyBEP20Venus::below minimum withdraw"
         );
         _unrollDebt(amountUnderlying_);
@@ -234,8 +241,11 @@ contract DyBEP20Venus is DyERC20 {
     }
 
     function getActualLeverage() public view returns (uint256) {
-        (uint256 balance, uint256 borrowed) = _getAccountData();
-        return balance.mul(1e18).div(balance.sub(borrowed));
+       (, uint256 internalBalance, uint256 borrow, uint256 exchangeRate) = tokenDelegator.getAccountSnapshot(
+            address(this)
+        );
+        uint256 balance = internalBalance.mul(exchangeRate).div(1e18);
+        return balance.mul(1e18).div(balance.sub(borrow));
     }
 
     function rescueDeployedFunds(

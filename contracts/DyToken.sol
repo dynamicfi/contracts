@@ -24,7 +24,7 @@ abstract contract DyToken is ERC20, Ownable {
     bool public depositEnable;
 
     event Deposit(address sender, uint256 amountUnderlying, uint256 amountToken);
-    event Withdraw(address sender, uint256 amount, uint256 amountUnderlying);
+    event Withdraw(address sender, uint256 amount, uint256 amountUnderlying, uint256 amountUnderlying1,uint256 amountUnderlying2,uint256 amountUnderlying3);
     event DepositsEnabled(bool newValue);
 
     constructor(string memory name_, string memory symbol_) ERC20 (name_, symbol_) {}
@@ -40,39 +40,21 @@ abstract contract DyToken is ERC20, Ownable {
     }
 
     /**
-     * @notice Calculate receipt tokens for a given amount of deposit tokens
-     * @dev If contract is empty, use 1:1 ratio
-     * @dev Could return zero shares for very low amounts of deposit tokens
-     * @param amount_ deposit tokens
-     * @return receipt tokens
-     */
-    function getSharesForDepositTokens(uint256 amount_) public view returns (uint256) {
-          if (totalSupply().mul(totalDeposits()) == 0) {
-            return amount_;
-        }
-        return amount_.mul(totalSupply()).div(totalDeposits());
-    }
-
-    /**
-     * @notice Calculate deposit tokens for a given amount of receipt tokens
-     * @param amount_ receipt tokens
-     * @return deposit tokens
-     */
-    function getDepositTokensForShares(uint256 amount_) public view returns (uint256) {
-        if (totalSupply().mul(totalDeposits()) == 0) {
-            return amount_;
-        }
-        return amount_.mul(totalDeposits()).div(totalSupply());
-    }
-
-    /**
      * @notice Sender supplies assets into the market and receives dyTokens in exchange
      * @param amountUnderlying_ The amount of the underlying asset to supply
      */
     function deposit(uint256 amountUnderlying_) external {
         require(depositEnable == true, "DyBEP20Venus::deposit");
         require(amountUnderlying_ > 0, "DyToken::amountUnderlying_ > 0");
-        uint256 _mintTokens = getSharesForDepositTokens(amountUnderlying_);
+        uint256 _mintTokens;
+        uint256 _totalDeposit = _totalDepositsFresh();
+        uint256 _totalSupply = totalSupply();
+        if (_totalDeposit.mul(_totalSupply) == 0) {
+            _mintTokens = amountUnderlying_;
+        } else {
+            _mintTokens = amountUnderlying_.mul(_totalDeposit).div(_totalSupply);
+        }
+
         _doTransferIn(_msgSender(), amountUnderlying_);
         _mint(_msgSender(), _mintTokens);
         _stakeDepositTokens(amountUnderlying_);
@@ -85,12 +67,20 @@ abstract contract DyToken is ERC20, Ownable {
      */
     function withdraw(uint256 amount_) external {
         require(amount_ > 0, "DyToken::amount_ > 0");
+        uint256 _totalDeposit = _totalDepositsFresh();
+        uint256 _totalSupply = totalSupply();
+        uint256 _amountUnderlying = _totalDeposit.mul(amount_).div(_totalSupply);
         _burn(_msgSender(), amount_);
-        uint256 _amountUnderlying = getDepositTokensForShares(amount_);
-        _doTransferOut(payable(_msgSender()), _amountUnderlying);
         _withdrawDepositTokens(_amountUnderlying);
-        emit Withdraw(_msgSender(), amount_, _amountUnderlying);
+        _doTransferOut(payable(_msgSender()), _amountUnderlying);
+        emit Withdraw(_msgSender(), amount_, _amountUnderlying, _totalDeposit, amount_, _totalSupply);
     }
+
+    /**
+     * @notice update newest exchange rate and return total deposit
+     * @return total underlying tokens
+     */
+    function _totalDepositsFresh() virtual internal returns (uint256);
 
     /**
      * @notice Stake underlying asset to a protocol
