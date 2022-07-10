@@ -1,12 +1,12 @@
-// contracts/Venus/DyBEP20Venus.sol
+// contracts/venus/DyBNBVenus.sol
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "../DyERC20.sol";
-import "./interfaces/IVenusBEP20Delegator.sol";
+import "../DyETH.sol";
+import "./interfaces/IVenusBNBDelegator.sol";
 import "./interfaces/IVenusUnitroller.sol";
 
 /**
@@ -21,7 +21,7 @@ import "./interfaces/IVenusUnitroller.sol";
 
  */
 
-contract DyBEP20Venus is DyERC20 {
+contract DyBNBVenus is DyETH {
     using SafeMath for uint256;
 
     struct LeverageSettings {
@@ -30,7 +30,7 @@ contract DyBEP20Venus is DyERC20 {
         uint256 minMinting;
     }
 
-    IVenusBEP20Delegator public tokenDelegator;
+    IVenusBNBDelegator public tokenDelegator;
     IVenusUnitroller public rewardController;
     uint256 private leverageLevel;
     uint256 private leverageBips;
@@ -38,14 +38,13 @@ contract DyBEP20Venus is DyERC20 {
     uint256 private redeemLimitSafetyMargin;
 
     constructor(
-        address underlying_,
         string memory name_,
         string memory symbol_,
         address tokenDelegator_,
         address rewardController_,
         LeverageSettings memory leverageSettings_
-    ) DyERC20(underlying_, name_, symbol_) {
-        tokenDelegator = IVenusBEP20Delegator(tokenDelegator_);
+    ) DyETH(name_, symbol_) {
+        tokenDelegator = IVenusBNBDelegator(tokenDelegator_);
         rewardController = IVenusUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;
         _updateLeverage(
@@ -107,10 +106,8 @@ contract DyBEP20Venus is DyERC20 {
         virtual
         override
     {
-        require(amountUnderlying_ > 0, "DyBEP20Venus::stakeDepositTokens");
-        underlying.approve(address(tokenDelegator), amountUnderlying_);
-        uint256 success = tokenDelegator.mint(amountUnderlying_);
-        require(success == 0, "DyBEP20Venus::Deposit failed");
+        require(amountUnderlying_ > 0, "DyBNBVenus::stakeDepositTokens");
+        tokenDelegator.mint{value: amountUnderlying_}();
         _rollupDebt();
     }
 
@@ -120,7 +117,6 @@ contract DyBEP20Venus is DyERC20 {
         uint256 lendTarget = balance.sub(borrowed).mul(leverageLevel).div(
             leverageBips
         );
-        underlying.approve(address(tokenDelegator), lendTarget);
         while (balance < lendTarget) {
             uint256 toBorrowAmount = _getBorrowable(
                 balance,
@@ -131,21 +127,18 @@ contract DyBEP20Venus is DyERC20 {
             if (balance.add(toBorrowAmount) > lendTarget) {
                 toBorrowAmount = lendTarget.sub(balance);
             }
+
             // safeguard needed because we can't mint below a certain threshold
             if (toBorrowAmount < minMinting) {
                 break;
             }
             require(
                 tokenDelegator.borrow(toBorrowAmount) == 0,
-                "DyBEP20Venus::borrowing failed"
+                "DyBNBVenus::borrowing failed"
             );
-            require(
-                tokenDelegator.mint(toBorrowAmount) == 0,
-                "DyBEP20Venus::lending failed"
-            );
+            tokenDelegator.mint{value: toBorrowAmount}();
             (balance, borrowed) = _getAccountData();
         }
-        underlying.approve(address(tokenDelegator), 0);
     }
 
     function _getAccountData()
@@ -180,11 +173,19 @@ contract DyBEP20Venus is DyERC20 {
     {
         require(
             amountUnderlying_ >= minMinting,
-            "DyBEP20Venus::below minimum withdraw"
+            "DyBNBVenus::below minimum withdraw"
         );
         _unrollDebt(amountUnderlying_);
         uint256 success = tokenDelegator.redeemUnderlying(amountUnderlying_);
-        require(success == 0, "DyBEP20Venus::failed to redeem");
+        require(success == 0, "DyBNBVenus::failed to redeem");
+    }
+
+    receive() external payable {
+        require(
+            _msgSender() == address(rewardController) ||
+            _msgSender() == address(tokenDelegator),
+            "DyBNBVenus::payments not allowed"
+        );
     }
 
     function _getRedeemable(
@@ -202,6 +203,7 @@ contract DyBEP20Venus is DyERC20 {
 
     function _unrollDebt(uint256 amountToBeFreed_) internal {
         (uint256 balance, uint256 borrowed) = _getAccountData();
+        if (borrowed == 0) return;
         (uint256 borrowLimit, uint256 borrowBips) = _getBorrowLimit();
         uint256 targetBorrow = balance
             .sub(borrowed)
@@ -210,7 +212,6 @@ contract DyBEP20Venus is DyERC20 {
             .div(leverageBips)
             .sub(balance.sub(borrowed).sub(amountToBeFreed_));
         uint256 toRepay = borrowed.sub(targetBorrow);
-        underlying.approve(address(tokenDelegator), borrowed);
         while (toRepay > 0) {
             uint256 unrollAmount = _getRedeemable(
                 balance,
@@ -223,19 +224,15 @@ contract DyBEP20Venus is DyERC20 {
             }
             require(
                 tokenDelegator.redeemUnderlying(unrollAmount) == 0,
-                "DyBEP20Venus::failed to redeem"
+                "DyBNBVenus::failed to redeem"
             );
-            require(
-                tokenDelegator.repayBorrow(unrollAmount) == 0,
-                "DyBEP20Venus::failed to repay borrow"
-            );
+            tokenDelegator.repayBorrow{value: unrollAmount}();
             (balance, borrowed) = _getAccountData();
             if (targetBorrow >= borrowed) {
                 break;
             }
             toRepay = borrowed.sub(targetBorrow);
         }
-        underlying.approve(address(tokenDelegator), 0);
     }
 
     function getActualLeverage() public view returns (uint256) {
@@ -249,12 +246,12 @@ contract DyBEP20Venus is DyERC20 {
     function rescueDeployedFunds(
         uint256 minReturnAmountAccepted
     ) external onlyOwner {
-        uint256 balanceBefore = underlying.balanceOf(address(this));
+        uint256 balanceBefore = address(this).balance;
         (uint256 balance, uint256 borrowed) = _getAccountData();
         _unrollDebt(balance.sub(borrowed));
         tokenDelegator.redeemUnderlying(tokenDelegator.balanceOfUnderlying(address(this)));
-        uint256 balanceAfter = underlying.balanceOf(address(this));
-        require(balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted, "DyBEP20Venus::rescueDeployedFunds");
+        uint256 balanceAfter = address(this).balance;
+        require(balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted, "DyBNBVenus::rescueDeployedFunds");
         if (depositEnable == true) {
             updateDepositsEnabled(false);
         }

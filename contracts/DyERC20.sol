@@ -24,6 +24,14 @@ abstract contract DyERC20 is DyToken {
         underlying = IERC20(underlying_);
     }
 
+    function deposit(uint256 amountUnderlying_) external {
+        _deposit(amountUnderlying_);
+    }
+
+    function withdraw(uint256 amount_) external {
+        _withdraw(amount_);
+    }
+
     function _doTransferIn(address from_, uint amount_) virtual override internal {
        require(underlying.transferFrom(from_, address(this), amount_), "DyERC20::_doTransferIn");
     }

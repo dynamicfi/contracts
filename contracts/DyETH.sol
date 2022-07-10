@@ -23,8 +23,16 @@ abstract contract DyETH is DyToken {
 
     constructor(string memory name_, string memory symbol_) DyToken(name_, symbol_) {}
 
+    function deposit(uint256 amountUnderlying_) external payable {
+        _deposit(amountUnderlying_);
+    }
+
+    function withdraw(uint256 amount_) external {
+        _withdraw(amount_);
+    }
+
     function _doTransferIn(address from_, uint256 amount_) virtual override internal {
-        require(msg.sender == from_, "sender mismatch");
+        require(_msgSender() == from_, "sender mismatch");
         require(msg.value == amount_, "value mismatch");
     }
 

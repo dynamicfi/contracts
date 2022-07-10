@@ -1,4 +1,4 @@
-// contracts/venus/IVenusBEP20Delegator.sol
+// contracts/venus/interfaces/IVenusBNBDelegator.sol
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
@@ -14,8 +14,8 @@ pragma solidity ^0.8.13;
 
  */
 
-interface IVenusBEP20Delegator {
-    function mint(uint256 mintAmount) external returns (uint256);
+interface IVenusBNBDelegator {
+    function mint() external payable;
 
     function redeemUnderlying(uint256 redeemAmount) external returns (uint256);
 
@@ -27,5 +27,5 @@ interface IVenusBEP20Delegator {
 
     function borrow(uint256 borrowAmount) external returns (uint256);
 
-    function repayBorrow(uint256 repayAmount) external returns (uint);
+    function repayBorrow() external payable;
 }

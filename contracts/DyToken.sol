@@ -43,7 +43,7 @@ abstract contract DyToken is ERC20, Ownable {
      * @notice Sender supplies assets into the market and receives dyTokens in exchange
      * @param amountUnderlying_ The amount of the underlying asset to supply
      */
-    function deposit(uint256 amountUnderlying_) external {
+    function _deposit(uint256 amountUnderlying_) internal {
         require(depositEnable == true, "DyBEP20Venus::deposit");
         require(amountUnderlying_ > 0, "DyToken::amountUnderlying_ > 0");
         uint256 _mintTokens;
@@ -65,7 +65,7 @@ abstract contract DyToken is ERC20, Ownable {
      * @notice Sender redeems dyTokens in exchange for the underlying asset
      * @param amount_ The number of dyTokens to redeem into underlying
      */
-    function withdraw(uint256 amount_) external {
+    function _withdraw(uint256 amount_) internal {
         require(amount_ > 0, "DyToken::amount_ > 0");
         uint256 _totalDeposit = _totalDepositsFresh();
         uint256 _totalSupply = totalSupply();
