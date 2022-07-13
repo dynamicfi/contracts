@@ -17,13 +17,12 @@ import "./UniswapInterface.sol";
              \|___|/                                                            
  */
 
-
 contract DynamicSwap is Ownable {
     using SafeERC20 for IERC20;
     address private immutable WETH;
     address private immutable ROUTER;
     uint256 private _fee;
-    uint256 private decimal = 10e18;
+    uint256 private decimal = 1e3;
 
     constructor(
         address router_,
@@ -60,7 +59,7 @@ contract DynamicSwap is Ownable {
             path[2] = tokenOut_;
         }
 
-        uint256 _amountIn = amountIn_ - (amountIn_ * (_fee / decimal));
+        uint256 _amountIn = amountIn_ - (amountIn_ * _fee / decimal / 100);
 
         IUniswapV2Router(ROUTER).swapExactTokensForTokens(
             _amountIn,
@@ -77,18 +76,14 @@ contract DynamicSwap is Ownable {
         address to_,
         uint256 deadline_
     ) external payable {
-        uint256 _amountIn = msg.value - (msg.value * (_fee / decimal));
+        uint256 _amountIn = msg.value - (msg.value * _fee / decimal / 100);
 
-        (bool success, ) = ROUTER.call{value: _amountIn}(
-            abi.encodeWithSignature(
-                "swapExactETHForTokens(uint256 amountOutMin,address[] calldata path,address to,uint256 deadline)",
-                amountOutMin_,
-                path_,
-                to_,
-                deadline_
-            )
+        IUniswapV2Router(ROUTER).swapExactETHForTokens{value: _amountIn}(
+            amountOutMin_,
+            path_,
+            to_,
+            deadline_
         );
-        require(success, "transaction failed");
     }
 
     function swapTokenForEth(
@@ -98,19 +93,15 @@ contract DynamicSwap is Ownable {
         address to_,
         uint256 deadline_
     ) external {
-        uint256 _amountIn = amountIn_ - (amountIn_ * (_fee / decimal));
+        uint256 _amountIn = amountIn_ - (amountIn_ * _fee / decimal / 100);
 
-        (bool success, ) = ROUTER.call(
-            abi.encodeWithSignature(
-                "swapExactTokensForETH(uint256 amountIn,uint256 amountOutMin,address[] calldata path,address to,uint256 deadline)",
-                _amountIn,
-                amountOutMin_,
-                path_,
-                to_,
-                deadline_
-            )
+        IUniswapV2Router(ROUTER).swapExactTokensForETH(
+            _amountIn,
+            amountOutMin_,
+            path_,
+            to_,
+            deadline_
         );
-        require(success, "transaction failed");
     }
 
     function claimToken(address token_, address receipt_) public onlyOwner {
@@ -121,7 +112,6 @@ contract DynamicSwap is Ownable {
     }
 
     function updateFee(uint256 fee_) public onlyOwner {
-        require(fee_ <= decimal, "fee <= decimal");
         _fee = fee_;
     }
 }
