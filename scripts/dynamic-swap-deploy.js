@@ -24,14 +24,14 @@ async function main() {
   // hre.ethers.
   await dynamic.deployed();
   console.log("dynamic deployed to:", dynamic.address);
-  // const res = await dynamic.swapEthForToken(
-  //   "0",
-  //   ["0xE02dF9e3e622DeBdD69fb838bB799E3F168902c5"],
-  //   "0xE2B369959AF533de62861B75184b24ddA29114A9",
-  //   1657199131,
-  //   { value: "1000000000000000" }
-  // );
-  // console.log("res", res);
+  const res = await dynamic.getAmountsOut(
+    hre.ethers.utils.parseEther("50000"),
+    [
+      "0xE02dF9e3e622DeBdD69fb838bB799E3F168902c5",
+      "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
+    ]
+  );
+  console.log("res", res);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

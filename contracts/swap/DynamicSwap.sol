@@ -59,7 +59,7 @@ contract DynamicSwap is Ownable {
             path[2] = tokenOut_;
         }
 
-        uint256 _amountIn = amountIn_ - (amountIn_ * _fee / decimal / 100);
+        uint256 _amountIn = amountIn_ - ((amountIn_ * _fee) / decimal / 100);
 
         IUniswapV2Router(ROUTER).swapExactTokensForTokens(
             _amountIn,
@@ -76,7 +76,7 @@ contract DynamicSwap is Ownable {
         address to_,
         uint256 deadline_
     ) external payable {
-        uint256 _amountIn = msg.value - (msg.value * _fee / decimal / 100);
+        uint256 _amountIn = msg.value - ((msg.value * _fee) / decimal / 100);
 
         IUniswapV2Router(ROUTER).swapExactETHForTokens{value: _amountIn}(
             amountOutMin_,
@@ -93,7 +93,7 @@ contract DynamicSwap is Ownable {
         address to_,
         uint256 deadline_
     ) external {
-        uint256 _amountIn = amountIn_ - (amountIn_ * _fee / decimal / 100);
+        uint256 _amountIn = amountIn_ - ((amountIn_ * _fee) / decimal / 100);
 
         IUniswapV2Router(ROUTER).swapExactTokensForETH(
             _amountIn,
@@ -102,6 +102,10 @@ contract DynamicSwap is Ownable {
             to_,
             deadline_
         );
+    }
+
+    function getAmountsOut(uint256 amountIn_, address[] calldata path_) public view returns (uint256[] memory amounts) {
+        return IUniswapV2Router(ROUTER).getAmountsOut(amountIn_, path_);
     }
 
     function claimToken(address token_, address receipt_) public onlyOwner {
