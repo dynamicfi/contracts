@@ -19,8 +19,8 @@ import "./UniswapInterface.sol";
 
 contract DynamicSwap is Ownable {
     using SafeERC20 for IERC20;
-    address private immutable WETH;
-    address private immutable ROUTER;
+    address public immutable WETH;
+    address public immutable ROUTER;
     uint256 private _fee;
     uint256 private decimal = 1e3;
 
