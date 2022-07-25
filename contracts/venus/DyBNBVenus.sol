@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../DyETH.sol";
 import "./interfaces/IVenusBNBDelegator.sol";
 import "./interfaces/IVenusUnitroller.sol";
+import "./interfaces/IPancakeRouter.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -32,6 +33,9 @@ contract DyBNBVenus is DyETH {
 
     IVenusBNBDelegator public tokenDelegator;
     IVenusUnitroller public rewardController;
+    IERC20 public xvsToken;
+    IERC20 public WBNB;
+    IPancakeRouter public pancakeRouter;
     uint256 private leverageLevel;
     uint256 private leverageBips;
     uint256 private minMinting;
@@ -42,6 +46,9 @@ contract DyBNBVenus is DyETH {
         string memory symbol_,
         address tokenDelegator_,
         address rewardController_,
+        address xvsAddress_,
+        address WBNB_,
+        address pancakeRouter_,
         LeverageSettings memory leverageSettings_
     ) DyETH(name_, symbol_) {
         tokenDelegator = IVenusBNBDelegator(tokenDelegator_);
@@ -52,6 +59,9 @@ contract DyBNBVenus is DyETH {
             leverageSettings_.leverageBips,
             leverageSettings_.leverageBips.mul(990).div(1000) //works as long as leverageBips > 1000
         );
+        xvsToken = IERC20(xvsAddress_);
+        WBNB = IERC20(WBNB_);
+        pancakeRouter = IPancakeRouter(pancakeRouter_);
         _enterMarket();
         updateDepositsEnabled(true);
     }
@@ -180,13 +190,7 @@ contract DyBNBVenus is DyETH {
         require(success == 0, "DyBNBVenus::failed to redeem");
     }
 
-    receive() external payable {
-        require(
-            _msgSender() == address(rewardController) ||
-            _msgSender() == address(tokenDelegator),
-            "DyBNBVenus::payments not allowed"
-        );
-    }
+    receive() external payable {}
 
     function _getRedeemable(
         uint256 balance,
@@ -241,6 +245,39 @@ contract DyBNBVenus is DyETH {
         );
         uint256 balance = internalBalance.mul(exchangeRate).div(1e18);
         return balance.mul(1e18).div(balance.sub(borrow));
+    }
+
+    function reinvest() external nonReentrant {
+        require(tx.origin == msg.sender, "DyBNBVenus::onlyEOA");
+        _reinvest(0);
+    }
+
+    /**
+     * @notice Reinvest rewards from staking contract to deposit tokens
+     */
+    function _reinvest(uint256 userDeposit) private {
+        address[] memory markets = new address[](1);
+        markets[0] = address(tokenDelegator);
+        rewardController.claimVenus(address(this), markets);
+
+        uint256 xvsBalance = xvsToken.balanceOf(address(this));
+        if (xvsBalance > 0) {
+            xvsToken.approve(address(pancakeRouter), xvsBalance);
+            address[] memory path = new address[](2);
+            path[0] = address(xvsToken);
+            path[1] = address(WBNB);
+            uint256 _deadline = block.timestamp + 3000;
+            pancakeRouter.swapExactTokensForETH(xvsBalance, 0, path, address(this), _deadline);
+        }
+
+        uint256 amount = address(this).balance;
+        if (userDeposit == 0) {
+            require(amount >= minTokensToReinvest, "DyBNBVenus::reinvest");
+        }
+
+        _stakeDepositTokens(amount);
+
+        emit Reinvest(totalDeposits(), totalSupply());
     }
 
     function rescueDeployedFunds(

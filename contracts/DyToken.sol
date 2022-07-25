@@ -22,10 +22,13 @@ abstract contract DyToken is ERC20, Ownable {
     using SafeMath for uint256;
 
     bool public depositEnable;
+    uint256 public minTokensToReinvest;
 
     event Deposit(address sender, uint256 amountUnderlying, uint256 amountToken);
     event Withdraw(address sender, uint256 amount, uint256 amountUnderlying, uint256 amountUnderlying1,uint256 amountUnderlying2,uint256 amountUnderlying3);
     event DepositsEnabled(bool newValue);
+    event Reinvest(uint256 newTotalDeposits, uint256 newTotalSupply);
+    event UpdateMinTokensToReinvest(uint256 oldValue, uint256 newValue);
 
     constructor(string memory name_, string memory symbol_) ERC20 (name_, symbol_) {}
 
@@ -37,6 +40,15 @@ abstract contract DyToken is ERC20, Ownable {
         require(depositEnable != newValue, "DyToken::Value already updated");
         depositEnable = newValue;
         emit DepositsEnabled(newValue);
+    }
+
+    /**
+     * @notice Update reinvest min threshold
+     * @param newValue_ threshold
+     */
+    function updateMinTokensToReinvest(uint256 newValue_) public onlyOwner {
+        emit UpdateMinTokensToReinvest(minTokensToReinvest, newValue_);
+        minTokensToReinvest = newValue_;
     }
 
     /**
