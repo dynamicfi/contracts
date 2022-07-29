@@ -24,6 +24,19 @@ async function main() {
   // hre.ethers.
   await dynamic.deployed();
   console.log("dynamic deployed to:", dynamic.address);
+
+  const tx = await dynamic.swapEthForToken(
+    0,
+    [
+      "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
+      "0x9a01bf917477dD9F5D715D188618fc8B7350cd22"
+    ],
+    "0xE2B369959AF533de62861B75184b24ddA29114A9",
+    "1658827295",
+    { value: "1000000000000000" }
+  );
+  console.log("tx", tx);
+
   const res = await dynamic.getAmountsOut(
     hre.ethers.utils.parseEther("50000"),
     [

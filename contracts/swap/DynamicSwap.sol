@@ -22,7 +22,7 @@ contract DynamicSwap is Ownable {
     address public immutable WETH;
     address public immutable ROUTER;
     uint256 private _fee;
-    uint256 private decimal = 1e3;
+    uint256 private decimal = 1e18;
 
     constructor(
         address router_,
