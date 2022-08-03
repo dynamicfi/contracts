@@ -282,8 +282,9 @@ contract DyBEP20Venus is DyERC20 {
         if (!userDeposit) {
             require(amount >= minTokensToReinvest, "DyBEP20Venus::reinvest");
         }
-
-        _stakeDepositTokens(amount);
+        if (amount > 0) {
+            _stakeDepositTokens(amount);
+        }
 
         emit Reinvest(totalDeposits(), totalSupply());
     }

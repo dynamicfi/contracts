@@ -27,7 +27,7 @@ async function main() {
     {
       leverageLevel: 15000,
       leverageBips: 10000,
-      minMinting: "10000000000000000000", // 10BUSD
+      minMinting: "1000000000000000000", // 10BUSD
     }
   );
 

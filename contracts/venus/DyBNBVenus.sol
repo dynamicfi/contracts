@@ -275,7 +275,9 @@ contract DyBNBVenus is DyETH {
             require(amount >= minTokensToReinvest, "DyBNBVenus::reinvest");
         }
 
-        _stakeDepositTokens(amount);
+        if (amount > 0) {
+            _stakeDepositTokens(amount);
+        }
 
         emit Reinvest(totalDeposits(), totalSupply());
     }
