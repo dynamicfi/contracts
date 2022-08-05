@@ -36,10 +36,10 @@ contract DyBEP20Venus is DyERC20 {
     IERC20 public xvsToken;
     IERC20 public WBNB;
     IPancakeRouter public pancakeRouter;
-    uint256 private leverageLevel;
-    uint256 private leverageBips;
-    uint256 private minMinting;
-    uint256 private redeemLimitSafetyMargin;
+    uint256 public leverageLevel;
+    uint256 public leverageBips;
+    uint256 public minMinting;
+    uint256 public redeemLimitSafetyMargin;
 
     constructor(
         address underlying_,
