@@ -7,8 +7,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../DyETH.sol";
 import "./interfaces/IVenusBNBDelegator.sol";
+import "./interfaces/IVenusBEP20Delegator.sol";
 import "./interfaces/IVenusUnitroller.sol";
 import "./interfaces/IPancakeRouter.sol";
+
+import "./lib/VenusLibrary.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -293,5 +296,14 @@ contract DyBNBVenus is DyETH {
         if (depositEnable == true) {
             updateDepositsEnabled(false);
         }
+    }
+
+    function distributeReward() public view returns(uint256){
+        uint256 xvsRewards = VenusLibrary.calculateReward(rewardController, IVenusBEP20Delegator(address(tokenDelegator)), address(this));
+        address[] memory path = new address[](2);
+        path[0] = address(xvsToken);
+        path[1] = address(WBNB);
+        uint256[] memory amounts = pancakeRouter.getAmountsOut(xvsRewards, path);
+        return amounts[1];
     }
 }
