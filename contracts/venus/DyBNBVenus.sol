@@ -248,7 +248,6 @@ contract DyBNBVenus is DyETH {
     }
 
     function reinvest() external nonReentrant {
-        require(tx.origin == msg.sender, "DyBNBVenus::onlyEOA");
         _reinvest(0);
     }
 

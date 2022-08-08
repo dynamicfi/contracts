@@ -249,7 +249,6 @@ contract DyBEP20Venus is DyERC20 {
     }
 
     function reinvest() external {
-        require(tx.origin == msg.sender, "DyBEP20Venus::onlyEOA");
         _reinvest(false);
     }
 
