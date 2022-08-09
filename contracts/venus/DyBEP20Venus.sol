@@ -10,6 +10,8 @@ import "./interfaces/IVenusBEP20Delegator.sol";
 import "./interfaces/IVenusUnitroller.sol";
 import "./interfaces/IPancakeRouter.sol";
 
+import "./lib/VenusLibrary.sol";
+
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
 |\   ___ \    |\  \  /  /|\   ___  \|\   __  \|\   _ \  _   \|\  \|\   ____\    
@@ -308,5 +310,18 @@ contract DyBEP20Venus is DyERC20 {
         if (depositEnable == true) {
             updateDepositsEnabled(false);
         }
+    }
+
+    function distributeReward() public view returns(uint256){
+        uint256 xvsRewards = VenusLibrary.calculateReward(rewardController, tokenDelegator, address(this));
+        if (xvsRewards == 0) {
+            return 0;
+        }
+        address[] memory path = new address[](3);
+        path[0] = address(xvsToken);
+        path[1] = address(WBNB);
+        path[2] = address(underlying);
+        uint256[] memory amounts = pancakeRouter.getAmountsOut(xvsRewards, path);
+        return amounts[2];
     }
 }

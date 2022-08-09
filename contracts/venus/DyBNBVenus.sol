@@ -300,6 +300,9 @@ contract DyBNBVenus is DyETH {
 
     function distributeReward() public view returns(uint256){
         uint256 xvsRewards = VenusLibrary.calculateReward(rewardController, IVenusBEP20Delegator(address(tokenDelegator)), address(this));
+        if (xvsRewards == 0) {
+            return 0;
+        }
         address[] memory path = new address[](2);
         path[0] = address(xvsToken);
         path[1] = address(WBNB);
