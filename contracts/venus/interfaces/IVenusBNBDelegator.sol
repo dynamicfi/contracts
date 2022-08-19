@@ -21,6 +21,8 @@ interface IVenusBNBDelegator {
 
     function borrowBalanceCurrent(address account) external returns (uint256);
 
+    function balanceOf(address owner) external view returns (uint256);
+
     function balanceOfUnderlying(address owner) external returns (uint256);
     
     function getAccountSnapshot(address account) external view returns (uint, uint, uint, uint);
@@ -28,4 +30,12 @@ interface IVenusBNBDelegator {
     function borrow(uint256 borrowAmount) external returns (uint256);
 
     function repayBorrow() external payable;
+
+    function borrowIndex() external view returns (uint256);
+
+    function borrowBalanceStored(address account) external view returns (uint256);
+
+    function totalBorrows() external view returns (uint256);
+
+    function totalSupply() external view returns (uint256);
 }

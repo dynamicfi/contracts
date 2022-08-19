@@ -8,6 +8,9 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../DyERC20.sol";
 import "./interfaces/IVenusBEP20Delegator.sol";
 import "./interfaces/IVenusUnitroller.sol";
+import "./interfaces/IPancakeRouter.sol";
+
+import "./lib/VenusLibrary.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -32,10 +35,13 @@ contract DyBEP20Venus is DyERC20 {
 
     IVenusBEP20Delegator public tokenDelegator;
     IVenusUnitroller public rewardController;
-    uint256 private leverageLevel;
-    uint256 private leverageBips;
-    uint256 private minMinting;
-    uint256 private redeemLimitSafetyMargin;
+    IERC20 public xvsToken;
+    IERC20 public WBNB;
+    IPancakeRouter public pancakeRouter;
+    uint256 public leverageLevel;
+    uint256 public leverageBips;
+    uint256 public minMinting;
+    uint256 public redeemLimitSafetyMargin;
 
     constructor(
         address underlying_,
@@ -43,11 +49,17 @@ contract DyBEP20Venus is DyERC20 {
         string memory symbol_,
         address tokenDelegator_,
         address rewardController_,
+        address xvsAddress_,
+        address WBNB_,
+        address pancakeRouter_,
         LeverageSettings memory leverageSettings_
     ) DyERC20(underlying_, name_, symbol_) {
         tokenDelegator = IVenusBEP20Delegator(tokenDelegator_);
         rewardController = IVenusUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;
+        xvsToken = IERC20(xvsAddress_);
+        WBNB = IERC20(WBNB_);
+        pancakeRouter = IPancakeRouter(pancakeRouter_);
         _updateLeverage(
             leverageSettings_.leverageLevel,
             leverageSettings_.leverageBips,
@@ -238,6 +250,46 @@ contract DyBEP20Venus is DyERC20 {
         underlying.approve(address(tokenDelegator), 0);
     }
 
+    function reinvest() external {
+        _reinvest(false);
+    }
+
+    /**
+     * @notice Reinvest rewards from staking contract to deposit tokens
+     */
+    function _reinvest(bool userDeposit) private {
+        address[] memory markets = new address[](1);
+        markets[0] = address(tokenDelegator);
+        rewardController.claimVenus(address(this), markets);
+
+        uint256 xvsBalance = xvsToken.balanceOf(address(this));
+        if (xvsBalance > 0) {
+            xvsToken.approve(address(pancakeRouter), xvsBalance);
+            address[] memory path = new address[](3);
+            path[0] = address(xvsToken);
+            path[1] = address(WBNB);
+            path[2] = address(underlying);
+            uint256 _deadline = block.timestamp + 3000;
+            pancakeRouter.swapExactTokensForTokens(
+                xvsBalance,
+                0,
+                path,
+                address(this),
+                _deadline
+            );
+        }
+
+        uint256 amount = underlying.balanceOf(address(this));
+        if (!userDeposit) {
+            require(amount >= minTokensToReinvest, "DyBEP20Venus::reinvest");
+        }
+        if (amount > 0) {
+            _stakeDepositTokens(amount);
+        }
+
+        emit Reinvest(totalDeposits(), totalSupply());
+    }
+
     function getActualLeverage() public view returns (uint256) {
        (, uint256 internalBalance, uint256 borrow, uint256 exchangeRate) = tokenDelegator.getAccountSnapshot(
             address(this)
@@ -258,5 +310,18 @@ contract DyBEP20Venus is DyERC20 {
         if (depositEnable == true) {
             updateDepositsEnabled(false);
         }
+    }
+
+    function distributeReward() public view returns(uint256){
+        uint256 xvsRewards = VenusLibrary.calculateReward(rewardController, tokenDelegator, address(this));
+        if (xvsRewards == 0) {
+            return 0;
+        }
+        address[] memory path = new address[](3);
+        path[0] = address(xvsToken);
+        path[1] = address(WBNB);
+        path[2] = address(underlying);
+        uint256[] memory amounts = pancakeRouter.getAmountsOut(xvsRewards, path);
+        return amounts[2];
     }
 }

@@ -17,4 +17,27 @@ pragma solidity ^0.8.13;
 interface IVenusUnitroller {
     function enterMarkets(address[] memory vTokens) external returns (uint256[] memory);
     function markets(address vTokenAddress) external view returns (bool, uint256);
+    function claimVenus(address holder, address[] memory vTokens) external;
+    function venusAccrued(address holder) external view returns (uint256);
+    function venusSupplierIndex(
+        address contractAddress,
+        address holder
+    ) external view returns (uint256 supplierIndex);
+
+    function venusBorrowerIndex(
+        address contractAddress,
+        address holder
+    ) external view returns (uint256 borrowerIndex);
+
+    function venusSupplyState(address holder)
+        external
+        view
+        returns (uint224 index, uint32 block);
+
+    function venusBorrowState(address holder)
+        external
+        view
+        returns (uint224 index, uint32 block);
+
+    function venusSpeeds(address token) external view returns (uint256);
 }

@@ -22,10 +22,14 @@ abstract contract DyToken is ERC20, Ownable {
     using SafeMath for uint256;
 
     bool public depositEnable;
+    uint256 public minTokensToReinvest;
+    mapping(address => uint256) public depositAverageRate;
 
     event Deposit(address sender, uint256 amountUnderlying, uint256 amountToken);
     event Withdraw(address sender, uint256 amount, uint256 amountUnderlying, uint256 amountUnderlying1,uint256 amountUnderlying2,uint256 amountUnderlying3);
     event DepositsEnabled(bool newValue);
+    event Reinvest(uint256 newTotalDeposits, uint256 newTotalSupply);
+    event UpdateMinTokensToReinvest(uint256 oldValue, uint256 newValue);
 
     constructor(string memory name_, string memory symbol_) ERC20 (name_, symbol_) {}
 
@@ -37,6 +41,15 @@ abstract contract DyToken is ERC20, Ownable {
         require(depositEnable != newValue, "DyToken::Value already updated");
         depositEnable = newValue;
         emit DepositsEnabled(newValue);
+    }
+
+    /**
+     * @notice Update reinvest min threshold
+     * @param newValue_ threshold
+     */
+    function updateMinTokensToReinvest(uint256 newValue_) public onlyOwner {
+        emit UpdateMinTokensToReinvest(minTokensToReinvest, newValue_);
+        minTokensToReinvest = newValue_;
     }
 
     /**
@@ -53,6 +66,18 @@ abstract contract DyToken is ERC20, Ownable {
             _mintTokens = amountUnderlying_;
         } else {
             _mintTokens = amountUnderlying_.mul(_totalDeposit).div(_totalSupply);
+        }
+
+        // Calculate deposit average exchange rate
+        uint256 _userBalance = balanceOf(_msgSender());
+        if (_totalDeposit.mul(_totalSupply) == 0) {
+            depositAverageRate[_msgSender()] = 1e18;
+        } if (depositAverageRate[_msgSender()] == 0) {
+            depositAverageRate[_msgSender()] = _totalDeposit.mul(1e18).div(_totalSupply);
+        } else {
+            uint256 _totalUserDeposit = (_userBalance.mul(depositAverageRate[_msgSender()]).div(1e18)).add(amountUnderlying_);
+            uint256 _totalToken = _userBalance.add(_mintTokens);
+            depositAverageRate[_msgSender()] = (_totalUserDeposit).mul(1e18).div(_totalToken);
         }
 
         _doTransferIn(_msgSender(), amountUnderlying_);
@@ -74,6 +99,10 @@ abstract contract DyToken is ERC20, Ownable {
         _withdrawDepositTokens(_amountUnderlying);
         _doTransferOut(payable(_msgSender()), _amountUnderlying);
         emit Withdraw(_msgSender(), amount_, _amountUnderlying, _totalDeposit, amount_, _totalSupply);
+    }
+
+    function depositAmount(address lender_) public view returns (uint256) {
+        return balanceOf(lender_).mul(depositAverageRate[lender_]).div(1e18);
     }
 
     /**
