@@ -113,7 +113,7 @@ interface ICbridge {
     )external;
 }
 contract CrossChain {
-    address cbrideAddress = 0xf89354F314faF344Abd754924438bA798E306DF2;
+    address cbridgeAddress = 0xf89354F314faF344Abd754924438bA798E306DF2;
     function swap(address _receiver,
         address _token,
         uint256 _amount,
@@ -126,12 +126,12 @@ contract CrossChain {
         require(result, "token transfer fail");
         require(IBEP20(_token).balanceOf(address(this)) >= _amount, "Transfer exceed balance");
         appove(_token, _amount);
-        ICbridge(cbrideAddress).send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
+        ICbridge(cbridgeAddress).send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
     }
 
     function appove(address token, uint256 amount) public {
-        if(IBEP20(token).allowance(address(this), cbrideAddress)< amount) {
-            IBEP20(token).approve(cbrideAddress, amount);
+        if(IBEP20(token).allowance(address(this), cbridgeAddress)< amount) {
+            IBEP20(token).approve(cbridgeAddress, amount);
         }
     }
 }
