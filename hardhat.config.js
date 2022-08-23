@@ -46,7 +46,12 @@ module.exports = {
       chainId: 56,
       gasPrice: 20000000000,
       accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-    }
+    },
+    ropsten: {
+      url: "https://ropsten.infura.io/v3/43885af4abc848f0a04f9fdabd95ea43",
+      chainId: 3,
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
