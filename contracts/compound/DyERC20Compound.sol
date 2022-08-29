@@ -269,7 +269,6 @@ contract DyERC20Compound is DyERC20 {
             ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
                 path: abi.encodePacked(address(compToken), poolFee, address(WETH), poolFee, address(underlying)),
                 recipient: address(this),
-                deadline: block.timestamp,
                 amountIn: compBalance,
                 amountOutMinimum: 0
             });
