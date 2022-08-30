@@ -44,7 +44,7 @@ contract DyBNBVenus is DyETH {
     uint256 public minMinting;
     uint256 public redeemLimitSafetyMargin;
 
-    constructor(
+    function initialize(
         string memory name_,
         string memory symbol_,
         address tokenDelegator_,
@@ -53,7 +53,8 @@ contract DyBNBVenus is DyETH {
         address WBNB_,
         address pancakeRouter_,
         LeverageSettings memory leverageSettings_
-    ) DyETH(name_, symbol_) {
+    ) public initializer {
+        DyToken_init(name_, symbol_);
         tokenDelegator = IVenusBNBDelegator(tokenDelegator_);
         rewardController = IVenusUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;

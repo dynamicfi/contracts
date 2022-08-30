@@ -3,7 +3,6 @@
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../DyETH.sol";
 import "./interfaces/ICompoundETHDelegator.sol";
@@ -45,7 +44,7 @@ contract DyETHCompound is DyETH {
     uint256 public minMinting;
     uint256 public redeemLimitSafetyMargin;
 
-    constructor(
+    function initialize(
         string memory name_,
         string memory symbol_,
         address tokenDelegator_,
@@ -54,7 +53,8 @@ contract DyETHCompound is DyETH {
         address WETH_,
         address swapRouter_,
         LeverageSettings memory leverageSettings_
-    ) DyETH(name_, symbol_) {
+    ) public initializer {
+        DyToken_init(name_, symbol_);
         tokenDelegator = ICompoundETHDelegator(tokenDelegator_);
         rewardController = ICompoundUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;

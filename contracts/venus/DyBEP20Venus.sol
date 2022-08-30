@@ -43,7 +43,7 @@ contract DyBEP20Venus is DyERC20 {
     uint256 public minMinting;
     uint256 public redeemLimitSafetyMargin;
 
-    constructor(
+    function initialize(
         address underlying_,
         string memory name_,
         string memory symbol_,
@@ -53,7 +53,8 @@ contract DyBEP20Venus is DyERC20 {
         address WBNB_,
         address pancakeRouter_,
         LeverageSettings memory leverageSettings_
-    ) DyERC20(underlying_, name_, symbol_) {
+    )  public initializer {
+        DyERC20_init(underlying_, name_, symbol_);
         tokenDelegator = IVenusBEP20Delegator(tokenDelegator_);
         rewardController = IVenusUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;
