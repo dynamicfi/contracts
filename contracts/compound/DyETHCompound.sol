@@ -1,4 +1,4 @@
-// contracts/venus/DyBNBVenus.sol
+// contracts/compound/DyETHCompound.sol
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
@@ -10,6 +10,7 @@ import "./interfaces/ICompoundETHDelegator.sol";
 import "./interfaces/ICompoundERC20Delegator.sol";
 import "./interfaces/ICompoundUnitroller.sol";
 import "./interfaces/ISwapRouter.sol";
+import "./interfaces/IWETH9.sol";
 
 import "./lib/CompoundLibrary.sol";
 
@@ -25,7 +26,7 @@ import "./lib/CompoundLibrary.sol";
 
  */
 
-contract DyBNBVenus is DyETH {
+contract DyETHCompound is DyETH {
     using SafeMath for uint256;
 
     struct LeverageSettings {
@@ -37,7 +38,7 @@ contract DyBNBVenus is DyETH {
     ICompoundETHDelegator public tokenDelegator;
     ICompoundUnitroller public rewardController;
     IERC20 public compToken;
-    IERC20 public WETH;
+    IWETH9 public WETH;
     ISwapRouter public swapRouter;
     uint256 public leverageLevel;
     uint256 public leverageBips;
@@ -63,7 +64,7 @@ contract DyBNBVenus is DyETH {
             leverageSettings_.leverageBips.mul(990).div(1000) //works as long as leverageBips > 1000
         );
         compToken = IERC20(compAddress_);
-        WETH = IERC20(WETH_);
+        WETH = IWETH9(WETH_);
         swapRouter = ISwapRouter(swapRouter_);
         _enterMarket();
         updateDepositsEnabled(true);
@@ -119,7 +120,7 @@ contract DyBNBVenus is DyETH {
         virtual
         override
     {
-        require(amountUnderlying_ > 0, "DyBNBVenus::stakeDepositTokens");
+        require(amountUnderlying_ > 0, "DyETHCompound::stakeDepositTokens");
         tokenDelegator.mint{value: amountUnderlying_}();
         _rollupDebt();
     }
@@ -147,7 +148,7 @@ contract DyBNBVenus is DyETH {
             }
             require(
                 tokenDelegator.borrow(toBorrowAmount) == 0,
-                "DyBNBVenus::borrowing failed"
+                "DyETHCompound::borrowing failed"
             );
             tokenDelegator.mint{value: toBorrowAmount}();
             (balance, borrowed) = _getAccountData();
@@ -186,11 +187,11 @@ contract DyBNBVenus is DyETH {
     {
         require(
             amountUnderlying_ >= minMinting,
-            "DyBNBVenus::below minimum withdraw"
+            "DyETHCompound::below minimum withdraw"
         );
         _unrollDebt(amountUnderlying_);
         uint256 success = tokenDelegator.redeemUnderlying(amountUnderlying_);
-        require(success == 0, "DyBNBVenus::failed to redeem");
+        require(success == 0, "DyETHCompound::failed to redeem");
     }
 
     receive() external payable {}
@@ -231,7 +232,7 @@ contract DyBNBVenus is DyETH {
             }
             require(
                 tokenDelegator.redeemUnderlying(unrollAmount) == 0,
-                "DyBNBVenus::failed to redeem"
+                "DyETHCompound::failed to redeem"
             );
             tokenDelegator.repayBorrow{value: unrollAmount}();
             (balance, borrowed) = _getAccountData();
@@ -274,12 +275,14 @@ contract DyBNBVenus is DyETH {
             });
             swapRouter.exactInput(params);
             uint256 wethBalance = WETH.balanceOf(address(this));
-            swapRouter.unwrapWETH9(wethBalance, address(this));
+            if (wethBalance > 0) {
+                WETH.withdraw(wethBalance);
+            }
         }
 
         uint256 amount = address(this).balance;
         if (userDeposit == 0) {
-            require(amount >= minTokensToReinvest, "DyBNBVenus::reinvest");
+            require(amount >= minTokensToReinvest, "DyETHCompound::reinvest");
         }
 
         if (amount > 0) {
@@ -297,7 +300,7 @@ contract DyBNBVenus is DyETH {
         _unrollDebt(balance.sub(borrowed));
         tokenDelegator.redeemUnderlying(tokenDelegator.balanceOfUnderlying(address(this)));
         uint256 balanceAfter = address(this).balance;
-        require(balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted, "DyBNBVenus::rescueDeployedFunds");
+        require(balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted, "DyETHCompound::rescueDeployedFunds");
         if (depositEnable == true) {
             updateDepositsEnabled(false);
         }
