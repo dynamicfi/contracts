@@ -1,17 +1,16 @@
-// contracts/venus/DyBNBVenus.sol
+// contracts/Compound/DyERC20Compound.sol
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "../DyETH.sol";
-import "./interfaces/IVenusBNBDelegator.sol";
-import "./interfaces/IVenusBEP20Delegator.sol";
-import "./interfaces/IVenusUnitroller.sol";
-import "./interfaces/IPancakeRouter.sol";
+import "../DyERC20.sol";
+import "./interfaces/ICompoundERC20Delegator.sol";
+import "./interfaces/ICompoundUnitroller.sol";
+import "./interfaces/ISwapRouter.sol";
 
-import "./lib/VenusLibrary.sol";
+import "./lib/CompoundLibrary.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -25,7 +24,7 @@ import "./lib/VenusLibrary.sol";
 
  */
 
-contract DyBNBVenus is DyETH {
+contract DyERC20Compound is DyERC20 {
     using SafeMath for uint256;
 
     struct LeverageSettings {
@@ -34,38 +33,39 @@ contract DyBNBVenus is DyETH {
         uint256 minMinting;
     }
 
-    IVenusBNBDelegator public tokenDelegator;
-    IVenusUnitroller public rewardController;
-    IERC20 public xvsToken;
-    IERC20 public WBNB;
-    IPancakeRouter public pancakeRouter;
+    ICompoundERC20Delegator public tokenDelegator;
+    ICompoundUnitroller public rewardController;
+    IERC20 public compToken;
+    IERC20 public WETH;
+    ISwapRouter public swapRouter; // v3
     uint256 public leverageLevel;
     uint256 public leverageBips;
     uint256 public minMinting;
     uint256 public redeemLimitSafetyMargin;
 
     function initialize(
+        address underlying_,
         string memory name_,
         string memory symbol_,
         address tokenDelegator_,
         address rewardController_,
-        address xvsAddress_,
-        address WBNB_,
-        address pancakeRouter_,
+        address compAddress_,
+        address WETH_,
+        address swapRouter_,
         LeverageSettings memory leverageSettings_
-    ) public initializer {
-        DyToken_init(name_, symbol_);
-        tokenDelegator = IVenusBNBDelegator(tokenDelegator_);
-        rewardController = IVenusUnitroller(rewardController_);
+    )  public initializer {
+        DyERC20_init(underlying_, name_, symbol_);
+        tokenDelegator = ICompoundERC20Delegator(tokenDelegator_);
+        rewardController = ICompoundUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;
+        compToken = IERC20(compAddress_);
+        WETH = IERC20(WETH_);
+        swapRouter = ISwapRouter(swapRouter_);
         _updateLeverage(
             leverageSettings_.leverageLevel,
             leverageSettings_.leverageBips,
             leverageSettings_.leverageBips.mul(990).div(1000) //works as long as leverageBips > 1000
         );
-        xvsToken = IERC20(xvsAddress_);
-        WBNB = IERC20(WBNB_);
-        pancakeRouter = IPancakeRouter(pancakeRouter_);
         _enterMarket();
         updateDepositsEnabled(true);
     }
@@ -120,8 +120,10 @@ contract DyBNBVenus is DyETH {
         virtual
         override
     {
-        require(amountUnderlying_ > 0, "DyBNBVenus::stakeDepositTokens");
-        tokenDelegator.mint{value: amountUnderlying_}();
+        require(amountUnderlying_ > 0, "DyERC20Compound::stakeDepositTokens");
+        underlying.approve(address(tokenDelegator), amountUnderlying_);
+        uint256 success = tokenDelegator.mint(amountUnderlying_);
+        require(success == 0, "DyERC20Compound::Deposit failed");
         _rollupDebt();
     }
 
@@ -131,6 +133,7 @@ contract DyBNBVenus is DyETH {
         uint256 lendTarget = balance.sub(borrowed).mul(leverageLevel).div(
             leverageBips
         );
+        underlying.approve(address(tokenDelegator), lendTarget);
         while (balance < lendTarget) {
             uint256 toBorrowAmount = _getBorrowable(
                 balance,
@@ -141,18 +144,21 @@ contract DyBNBVenus is DyETH {
             if (balance.add(toBorrowAmount) > lendTarget) {
                 toBorrowAmount = lendTarget.sub(balance);
             }
-
             // safeguard needed because we can't mint below a certain threshold
             if (toBorrowAmount < minMinting) {
                 break;
             }
             require(
                 tokenDelegator.borrow(toBorrowAmount) == 0,
-                "DyBNBVenus::borrowing failed"
+                "DyERC20Compound::borrowing failed"
             );
-            tokenDelegator.mint{value: toBorrowAmount}();
+            require(
+                tokenDelegator.mint(toBorrowAmount) == 0,
+                "DyERC20Compound::lending failed"
+            );
             (balance, borrowed) = _getAccountData();
         }
+        underlying.approve(address(tokenDelegator), 0);
     }
 
     function _getAccountData()
@@ -187,14 +193,12 @@ contract DyBNBVenus is DyETH {
     {
         require(
             amountUnderlying_ >= minMinting,
-            "DyBNBVenus::below minimum withdraw"
+            "DyERC20Compound::below minimum withdraw"
         );
         _unrollDebt(amountUnderlying_);
         uint256 success = tokenDelegator.redeemUnderlying(amountUnderlying_);
-        require(success == 0, "DyBNBVenus::failed to redeem");
+        require(success == 0, "DyERC20Compound::failed to redeem");
     }
-
-    receive() external payable {}
 
     function _getRedeemable(
         uint256 balance,
@@ -211,7 +215,6 @@ contract DyBNBVenus is DyETH {
 
     function _unrollDebt(uint256 amountToBeFreed_) internal {
         (uint256 balance, uint256 borrowed) = _getAccountData();
-        if (borrowed == 0) return;
         (uint256 borrowLimit, uint256 borrowBips) = _getBorrowLimit();
         uint256 targetBorrow = balance
             .sub(borrowed)
@@ -220,6 +223,7 @@ contract DyBNBVenus is DyETH {
             .div(leverageBips)
             .sub(balance.sub(borrowed).sub(amountToBeFreed_));
         uint256 toRepay = borrowed.sub(targetBorrow);
+        underlying.approve(address(tokenDelegator), borrowed);
         while (toRepay > 0) {
             uint256 unrollAmount = _getRedeemable(
                 balance,
@@ -232,15 +236,55 @@ contract DyBNBVenus is DyETH {
             }
             require(
                 tokenDelegator.redeemUnderlying(unrollAmount) == 0,
-                "DyBNBVenus::failed to redeem"
+                "DyERC20Compound::failed to redeem"
             );
-            tokenDelegator.repayBorrow{value: unrollAmount}();
+            require(
+                tokenDelegator.repayBorrow(unrollAmount) == 0,
+                "DyERC20Compound::failed to repay borrow"
+            );
             (balance, borrowed) = _getAccountData();
             if (targetBorrow >= borrowed) {
                 break;
             }
             toRepay = borrowed.sub(targetBorrow);
         }
+        underlying.approve(address(tokenDelegator), 0);
+    }
+
+    function reinvest() external {
+        _reinvest(false);
+    }
+
+    /**
+     * @notice Reinvest rewards from staking contract to deposit tokens
+     */
+    function _reinvest(bool userDeposit) private {
+        address[] memory markets = new address[](1);
+        markets[0] = address(tokenDelegator);
+        rewardController.claimComp(address(this), markets);
+
+        uint256 compBalance = compToken.balanceOf(address(this));
+        if (compBalance > 0) {
+            compToken.approve(address(swapRouter), compBalance);
+            uint24 poolFee = 3000;
+            ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
+                path: abi.encodePacked(address(compToken), poolFee, address(WETH), poolFee, address(underlying)),
+                recipient: address(this),
+                amountIn: compBalance,
+                amountOutMinimum: 0
+            });
+            swapRouter.exactInput(params);
+        }
+
+        uint256 amount = underlying.balanceOf(address(this));
+        if (!userDeposit) {
+            require(amount >= minTokensToReinvest, "DyERC20Compound::reinvest");
+        }
+        if (amount > 0) {
+            _stakeDepositTokens(amount);
+        }
+
+        emit Reinvest(totalDeposits(), totalSupply());
     }
 
     function getActualLeverage() public view returns (uint256) {
@@ -251,63 +295,22 @@ contract DyBNBVenus is DyETH {
         return balance.mul(1e18).div(balance.sub(borrow));
     }
 
-    function reinvest() external nonReentrant {
-        _reinvest(0);
-    }
-
-    /**
-     * @notice Reinvest rewards from staking contract to deposit tokens
-     */
-    function _reinvest(uint256 userDeposit) private {
-        address[] memory markets = new address[](1);
-        markets[0] = address(tokenDelegator);
-        rewardController.claimVenus(address(this), markets);
-
-        uint256 xvsBalance = xvsToken.balanceOf(address(this));
-        if (xvsBalance > 0) {
-            xvsToken.approve(address(pancakeRouter), xvsBalance);
-            address[] memory path = new address[](2);
-            path[0] = address(xvsToken);
-            path[1] = address(WBNB);
-            uint256 _deadline = block.timestamp + 3000;
-            pancakeRouter.swapExactTokensForETH(xvsBalance, 0, path, address(this), _deadline);
-        }
-
-        uint256 amount = address(this).balance;
-        if (userDeposit == 0) {
-            require(amount >= minTokensToReinvest, "DyBNBVenus::reinvest");
-        }
-
-        if (amount > 0) {
-            _stakeDepositTokens(amount);
-        }
-
-        emit Reinvest(totalDeposits(), totalSupply());
-    }
-
     function rescueDeployedFunds(
         uint256 minReturnAmountAccepted
     ) external onlyOwner {
-        uint256 balanceBefore = address(this).balance;
+        uint256 balanceBefore = underlying.balanceOf(address(this));
         (uint256 balance, uint256 borrowed) = _getAccountData();
         _unrollDebt(balance.sub(borrowed));
         tokenDelegator.redeemUnderlying(tokenDelegator.balanceOfUnderlying(address(this)));
-        uint256 balanceAfter = address(this).balance;
-        require(balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted, "DyBNBVenus::rescueDeployedFunds");
+        uint256 balanceAfter = underlying.balanceOf(address(this));
+        require(balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted, "DyERC20Compound::rescueDeployedFunds");
         if (depositEnable == true) {
             updateDepositsEnabled(false);
         }
     }
 
-    function distributeReward() public view returns(uint256){
-        uint256 xvsRewards = VenusLibrary.calculateReward(rewardController, IVenusBEP20Delegator(address(tokenDelegator)), address(this));
-        if (xvsRewards == 0) {
-            return 0;
-        }
-        address[] memory path = new address[](2);
-        path[0] = address(xvsToken);
-        path[1] = address(WBNB);
-        uint256[] memory amounts = pancakeRouter.getAmountsOut(xvsRewards, path);
-        return amounts[1];
+    function compReward() public view returns(uint256){
+        uint256 compRewards = CompoundLibrary.calculateReward(rewardController, tokenDelegator, address(this));
+        return compRewards;
     }
 }

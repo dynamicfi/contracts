@@ -1,17 +1,17 @@
-// contracts/venus/DyBNBVenus.sol
+// contracts/compound/DyETHCompound.sol
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../DyETH.sol";
-import "./interfaces/IVenusBNBDelegator.sol";
-import "./interfaces/IVenusBEP20Delegator.sol";
-import "./interfaces/IVenusUnitroller.sol";
-import "./interfaces/IPancakeRouter.sol";
+import "./interfaces/ICompoundETHDelegator.sol";
+import "./interfaces/ICompoundERC20Delegator.sol";
+import "./interfaces/ICompoundUnitroller.sol";
+import "./interfaces/ISwapRouter.sol";
+import "./interfaces/IWETH9.sol";
 
-import "./lib/VenusLibrary.sol";
+import "./lib/CompoundLibrary.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -25,7 +25,7 @@ import "./lib/VenusLibrary.sol";
 
  */
 
-contract DyBNBVenus is DyETH {
+contract DyETHCompound is DyETH {
     using SafeMath for uint256;
 
     struct LeverageSettings {
@@ -34,11 +34,11 @@ contract DyBNBVenus is DyETH {
         uint256 minMinting;
     }
 
-    IVenusBNBDelegator public tokenDelegator;
-    IVenusUnitroller public rewardController;
-    IERC20 public xvsToken;
-    IERC20 public WBNB;
-    IPancakeRouter public pancakeRouter;
+    ICompoundETHDelegator public tokenDelegator;
+    ICompoundUnitroller public rewardController;
+    IERC20 public compToken;
+    IWETH9 public WETH;
+    ISwapRouter public swapRouter;
     uint256 public leverageLevel;
     uint256 public leverageBips;
     uint256 public minMinting;
@@ -49,23 +49,23 @@ contract DyBNBVenus is DyETH {
         string memory symbol_,
         address tokenDelegator_,
         address rewardController_,
-        address xvsAddress_,
-        address WBNB_,
-        address pancakeRouter_,
+        address compAddress_,
+        address WETH_,
+        address swapRouter_,
         LeverageSettings memory leverageSettings_
     ) public initializer {
         DyToken_init(name_, symbol_);
-        tokenDelegator = IVenusBNBDelegator(tokenDelegator_);
-        rewardController = IVenusUnitroller(rewardController_);
+        tokenDelegator = ICompoundETHDelegator(tokenDelegator_);
+        rewardController = ICompoundUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;
         _updateLeverage(
             leverageSettings_.leverageLevel,
             leverageSettings_.leverageBips,
             leverageSettings_.leverageBips.mul(990).div(1000) //works as long as leverageBips > 1000
         );
-        xvsToken = IERC20(xvsAddress_);
-        WBNB = IERC20(WBNB_);
-        pancakeRouter = IPancakeRouter(pancakeRouter_);
+        compToken = IERC20(compAddress_);
+        WETH = IWETH9(WETH_);
+        swapRouter = ISwapRouter(swapRouter_);
         _enterMarket();
         updateDepositsEnabled(true);
     }
@@ -120,7 +120,7 @@ contract DyBNBVenus is DyETH {
         virtual
         override
     {
-        require(amountUnderlying_ > 0, "DyBNBVenus::stakeDepositTokens");
+        require(amountUnderlying_ > 0, "DyETHCompound::stakeDepositTokens");
         tokenDelegator.mint{value: amountUnderlying_}();
         _rollupDebt();
     }
@@ -148,7 +148,7 @@ contract DyBNBVenus is DyETH {
             }
             require(
                 tokenDelegator.borrow(toBorrowAmount) == 0,
-                "DyBNBVenus::borrowing failed"
+                "DyETHCompound::borrowing failed"
             );
             tokenDelegator.mint{value: toBorrowAmount}();
             (balance, borrowed) = _getAccountData();
@@ -187,11 +187,11 @@ contract DyBNBVenus is DyETH {
     {
         require(
             amountUnderlying_ >= minMinting,
-            "DyBNBVenus::below minimum withdraw"
+            "DyETHCompound::below minimum withdraw"
         );
         _unrollDebt(amountUnderlying_);
         uint256 success = tokenDelegator.redeemUnderlying(amountUnderlying_);
-        require(success == 0, "DyBNBVenus::failed to redeem");
+        require(success == 0, "DyETHCompound::failed to redeem");
     }
 
     receive() external payable {}
@@ -232,7 +232,7 @@ contract DyBNBVenus is DyETH {
             }
             require(
                 tokenDelegator.redeemUnderlying(unrollAmount) == 0,
-                "DyBNBVenus::failed to redeem"
+                "DyETHCompound::failed to redeem"
             );
             tokenDelegator.repayBorrow{value: unrollAmount}();
             (balance, borrowed) = _getAccountData();
@@ -261,21 +261,28 @@ contract DyBNBVenus is DyETH {
     function _reinvest(uint256 userDeposit) private {
         address[] memory markets = new address[](1);
         markets[0] = address(tokenDelegator);
-        rewardController.claimVenus(address(this), markets);
+        rewardController.claimComp(address(this), markets);
 
-        uint256 xvsBalance = xvsToken.balanceOf(address(this));
-        if (xvsBalance > 0) {
-            xvsToken.approve(address(pancakeRouter), xvsBalance);
-            address[] memory path = new address[](2);
-            path[0] = address(xvsToken);
-            path[1] = address(WBNB);
-            uint256 _deadline = block.timestamp + 3000;
-            pancakeRouter.swapExactTokensForETH(xvsBalance, 0, path, address(this), _deadline);
+        uint256 compBalance = compToken.balanceOf(address(this));
+        if (compBalance > 0) {
+            compToken.approve(address(swapRouter), compBalance);
+            uint24 poolFee = 3000;
+            ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
+                path: abi.encodePacked(address(compToken), poolFee, address(WETH)),
+                recipient: address(this),
+                amountIn: compBalance,
+                amountOutMinimum: 0
+            });
+            swapRouter.exactInput(params);
+            uint256 wethBalance = WETH.balanceOf(address(this));
+            if (wethBalance > 0) {
+                WETH.withdraw(wethBalance);
+            }
         }
 
         uint256 amount = address(this).balance;
         if (userDeposit == 0) {
-            require(amount >= minTokensToReinvest, "DyBNBVenus::reinvest");
+            require(amount >= minTokensToReinvest, "DyETHCompound::reinvest");
         }
 
         if (amount > 0) {
@@ -293,21 +300,14 @@ contract DyBNBVenus is DyETH {
         _unrollDebt(balance.sub(borrowed));
         tokenDelegator.redeemUnderlying(tokenDelegator.balanceOfUnderlying(address(this)));
         uint256 balanceAfter = address(this).balance;
-        require(balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted, "DyBNBVenus::rescueDeployedFunds");
+        require(balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted, "DyETHCompound::rescueDeployedFunds");
         if (depositEnable == true) {
             updateDepositsEnabled(false);
         }
     }
 
-    function distributeReward() public view returns(uint256){
-        uint256 xvsRewards = VenusLibrary.calculateReward(rewardController, IVenusBEP20Delegator(address(tokenDelegator)), address(this));
-        if (xvsRewards == 0) {
-            return 0;
-        }
-        address[] memory path = new address[](2);
-        path[0] = address(xvsToken);
-        path[1] = address(WBNB);
-        uint256[] memory amounts = pancakeRouter.getAmountsOut(xvsRewards, path);
-        return amounts[1];
+    function compReward() public view returns(uint256){
+        uint256 compRewards = CompoundLibrary.calculateReward(rewardController, ICompoundERC20Delegator(address(tokenDelegator)), address(this));
+        return compRewards;
     }
 }
