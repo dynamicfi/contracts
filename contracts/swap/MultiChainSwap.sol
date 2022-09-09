@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./UniswapInterface.sol";
+import "./SafeMath.sol";
 
 interface ICbridge {
     function send (
@@ -17,6 +18,7 @@ interface ICbridge {
     )external;
 }
 contract CrossChain is UUPSUpgradeable, OwnableUpgradeable {
+  using SafeMath for uint256;
     uint256 constant divider = 10000;
     uint256 constant swapTimeout = 900;
     uint256 public fee;
@@ -65,7 +67,7 @@ contract CrossChain is UUPSUpgradeable, OwnableUpgradeable {
             uint256 remainingAmount = msg.value;
             if(!zeroFee[msg.sender] && fee > 0) {
                 uint256 totalFee = fee * _amount / divider;
-                remainingAmount -= totalFee;
+                remainingAmount = remainingAmount.sub(totalFee);
             }
             appove(router, _tokenFrom, remainingAmount);
             address[] memory path;
@@ -80,7 +82,7 @@ contract CrossChain is UUPSUpgradeable, OwnableUpgradeable {
             uint256 remainingAmount = _amount;
             if(!zeroFee[msg.sender] && fee > 0) {
                 uint256 totalFee = fee * _amount / divider;
-                remainingAmount -= totalFee;
+                remainingAmount = remainingAmount.sub(totalFee);
             }
             appove(router, _tokenFrom, remainingAmount);
             if(_tokenFrom != _tokenTo) {
