@@ -14,21 +14,22 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const DyBNBVenus = await hre.ethers.getContractFactory("DyBNBVenus");
-  const dyBNBVenus = await hre.upgrades.deployProxy(
-    DyBNBVenus,
+  const DyERC20Comp = await hre.ethers.getContractFactory("DyERC20Compound");
+  const dyERC20Comp = await hre.upgrades.deployProxy(
+    DyERC20Comp,
     [
-      "Dynamic BNB",
-      "DyBNB",
-      "0x2E7222e51c0f6e98610A1543Aa3836E092CDe62c", // Venus BUSD
-      "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D",
-      "0xB9e0E753630434d7863528cc73CB7AC638a7c8ff",
-      "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
-      "0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3",
+      "0x07865c6e87b9f70255377e024ace6630c1eaa37f", // USDC
+      "Dynamic cUSDc",
+      "DyCompUSDc",
+      "0x2973e69b20563bcc66dC63Bde153072c33eF37fe", // cUSDC
+      "0xcfa7b0e37f5AC60f3ae25226F5e39ec59AD26152", // Unitroller
+      "0xf76D4a441E4ba86A923ce32B89AFF89dBccAA075",
+      "0xc778417E063141139Fce010982780140Aa0cD5Ab",
+      "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
       {
-        leverageLevel: 10000,
+        leverageLevel: 15000,
         leverageBips: 10000,
-        minMinting: "100000000000000", // 0.001BNB
+        minMinting: "10000", // 0.001 USDC
       },
     ],
     {
@@ -36,9 +37,9 @@ async function main() {
     }
   );
 
-  await dyBNBVenus.deployed();
+  await dyERC20Comp.deployed();
 
-  console.log("DyBNBVenus deployed to:", dyBNBVenus.address);
+  console.log("DyERCcomp deployed to:", dyERC20Comp.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
