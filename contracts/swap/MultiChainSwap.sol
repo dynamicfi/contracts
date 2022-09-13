@@ -2,8 +2,7 @@
 
 pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./UniswapInterface.sol";
 import "./SafeMath.sol";
 
@@ -28,26 +27,23 @@ interface ICbridge {
         uint32 _maxSlippage // slippage * 1M, eg. 0.5% -> 5000
     )external;
 }
-contract CrossChain is UUPSUpgradeable, OwnableUpgradeable {
+contract CrossChain is Ownable {
   using SafeMath for uint256;
     uint256 constant divider = 10000;
     uint256 constant swapTimeout = 900;
     uint256 public fee;
-    address public cbridgeAddress; // 0x9ac64cc6e4415144c455bd8e4837fea55603e5c3
+    address public cbridgeAddress; // 0xf89354F314faF344Abd754924438bA798E306DF2
     mapping(address => bool) public zeroFee;
-    address public router;
+    address public router; // 0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3
     address public WETH;
     
-    function initialize(address _cbridgeAddress, uint256 _fee, address _router, address _weth) public initializer 
+    constructor(address _cbridgeAddress, uint256 _fee, address _router, address _weth) 
     {
         cbridgeAddress = _cbridgeAddress;
         router = _router;
         fee = _fee;
         WETH = _weth;
-        __Ownable_init();
     }
-
-    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     function updateFee(uint256 _fee) public onlyOwner{
         fee = _fee;
@@ -85,9 +81,9 @@ contract CrossChain is UUPSUpgradeable, OwnableUpgradeable {
             path = new address[](2);
             path[0] = WETH;
             path[1] = _tokenTo;
-            amountOut = IUniswapV2Router(router).getAmountsOut(remainingAmount, path);
-            require(amountOut > 0, "Invalid param");
-            uint256[] memory amounts = IUniswapV2Router(router).swapETHForExactTokens{value: _remainingAmount}(amountOut, path, address(this), block.timestamp + swapTimeout);
+            uint256[] memory amt = IUniswapV2Router(router).getAmountsOut(remainingAmount, path);
+            require(amt[2] > 0, "Invalid param");
+            uint256[] memory amounts = IUniswapV2Router(router).swapETHForExactTokens{value: remainingAmount}(amountOut, path, address(this), block.timestamp + swapTimeout);
             amountOut = amounts[2];
         } else {
             uint256 remainingAmount = _amount;
@@ -109,8 +105,8 @@ contract CrossChain is UUPSUpgradeable, OwnableUpgradeable {
                     path[2] = _tokenTo;
                 }
                 
-                amountOut = IUniswapV2Router(router).getAmountsOut(remainingAmount, path);
-                require(amountOut > 0, "Invalid param");
+                uint256[] memory amt = IUniswapV2Router(router).getAmountsOut(remainingAmount, path);
+                require(amt[2] > 0, "Invalid param");
                     uint256[] memory amounts = IUniswapV2Router(router).swapExactTokensForTokens(remainingAmount, amountOut, path, address(this), block.timestamp + swapTimeout);
                 amountOut = amounts[2];
             } else {
@@ -119,7 +115,7 @@ contract CrossChain is UUPSUpgradeable, OwnableUpgradeable {
         }
 
         appove(cbridgeAddress, _tokenTo, amountOut);
-        ICbridge(cbridgeAddress).send(_receiver, _token, amountOut, _dstChainId, _nonce, _maxSlippage);
+        ICbridge(cbridgeAddress).send(_receiver, _tokenTo, amountOut, _dstChainId, _nonce, _maxSlippage);
     }
 
     function appove(address spener, address token, uint256 amount) internal {
