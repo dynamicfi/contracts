@@ -2,13 +2,9 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 
 /**
@@ -23,8 +19,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
  */
 
-abstract contract DyToken is Initializable, UUPSUpgradeable, ERC20Upgradeable, OwnableUpgradeable {
-    using SafeMathUpgradeable for uint256;
+bstract contract DyToken is ERC20, Ownable {
+    using SafeMath for uint256;
 
     bool public depositEnable;
     uint256 public minTokensToReinvest;
@@ -36,12 +32,7 @@ abstract contract DyToken is Initializable, UUPSUpgradeable, ERC20Upgradeable, O
     event Reinvest(uint256 newTotalDeposits, uint256 newTotalSupply);
     event UpdateMinTokensToReinvest(uint256 oldValue, uint256 newValue);
 
-    function DyToken_init(string memory name_, string memory symbol_) internal initializer {
-        __ERC20_init(name_, symbol_);
-        __Ownable_init();
-    }
-
-    function _authorizeUpgrade(address) internal override onlyOwner {}
+    constructor(string memory name_, string memory symbol_) ERC20 (name_, symbol_) {}
 
     /**
      * @notice Enable/disable deposits
