@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
  */
 
-bstract contract DyToken is ERC20, Ownable {
+abstract contract DyToken is ERC20, Ownable {
     using SafeMath for uint256;
 
     bool public depositEnable;
