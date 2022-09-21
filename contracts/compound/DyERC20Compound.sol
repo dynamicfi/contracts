@@ -21,7 +21,6 @@ import "./lib/CompoundLibrary.sol";
    \ \_______\__/  / /      \ \__\\ \__\ \__\ \__\ \__\    \ \__\ \__\ \_______\
     \|_______|\___/ /        \|__| \|__|\|__|\|__|\|__|     \|__|\|__|\|_______|
              \|___|/                                                            
-
  */
 
 contract DyERC20Compound is DyERC20 {
@@ -43,7 +42,7 @@ contract DyERC20Compound is DyERC20 {
     uint256 public minMinting;
     uint256 public redeemLimitSafetyMargin;
 
-    function initialize(
+    constructor(
         address underlying_,
         string memory name_,
         string memory symbol_,
@@ -53,8 +52,7 @@ contract DyERC20Compound is DyERC20 {
         address WETH_,
         address swapRouter_,
         LeverageSettings memory leverageSettings_
-    )  public initializer {
-        DyERC20_init(underlying_, name_, symbol_);
+    ) DyERC20(underlying_, name_, symbol_) {
         tokenDelegator = ICompoundERC20Delegator(tokenDelegator_);
         rewardController = ICompoundUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;

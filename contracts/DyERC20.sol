@@ -3,7 +3,8 @@
 pragma solidity ^0.8.13;
 
 import "./DyToken.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -18,11 +19,10 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
  */
 
 abstract contract DyERC20 is DyToken {
-    IERC20Upgradeable public underlying;
+    IERC20 public underlying;
 
-    function DyERC20_init(address underlying_, string memory name_, string memory symbol_) internal initializer {
-        super.DyToken_init(name_, symbol_);
-        underlying = IERC20Upgradeable(underlying_);
+    constructor(address underlying_, string memory name_, string memory symbol_) DyToken(name_, symbol_) {
+        underlying = IERC20(underlying_);
     }
 
     function deposit(uint256 amountUnderlying_) external {

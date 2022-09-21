@@ -22,7 +22,6 @@ import "./lib/VenusLibrary.sol";
    \ \_______\__/  / /      \ \__\\ \__\ \__\ \__\ \__\    \ \__\ \__\ \_______\
     \|_______|\___/ /        \|__| \|__|\|__|\|__|\|__|     \|__|\|__|\|_______|
              \|___|/                                                            
-
  */
 
 contract DyBNBVenus is DyETH {
@@ -44,7 +43,7 @@ contract DyBNBVenus is DyETH {
     uint256 public minMinting;
     uint256 public redeemLimitSafetyMargin;
 
-    function initialize(
+    constructor(
         string memory name_,
         string memory symbol_,
         address tokenDelegator_,
@@ -53,8 +52,7 @@ contract DyBNBVenus is DyETH {
         address WBNB_,
         address pancakeRouter_,
         LeverageSettings memory leverageSettings_
-    ) public initializer {
-        DyToken_init(name_, symbol_);
+    ) DyETH(name_, symbol_) {
         tokenDelegator = IVenusBNBDelegator(tokenDelegator_);
         rewardController = IVenusUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;
