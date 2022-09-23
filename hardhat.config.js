@@ -53,6 +53,11 @@ module.exports = {
       chainId: 3,
       accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
+    goerli: {
+      url: "https://goerli.infura.io/v3/43885af4abc848f0a04f9fdabd95ea43",
+      chainId: 5,
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,

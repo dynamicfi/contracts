@@ -16,18 +16,18 @@ async function main() {
   // We get the contract to deploy
   const DyERC20Comp = await hre.ethers.getContractFactory("DyERC20Compound");
   const dyERC20Comp = await DyERC20Comp.deploy(
-    "0x07865c6e87b9f70255377e024ace6630c1eaa37f", // USDC
+    "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C", // USDC
     "Dynamic cUSDc",
     "DyCompUSDc",
-    "0x2973e69b20563bcc66dC63Bde153072c33eF37fe", // cUSDC
-    "0xcfa7b0e37f5AC60f3ae25226F5e39ec59AD26152", // Unitroller
-    "0xf76D4a441E4ba86A923ce32B89AFF89dBccAA075",
-    "0xc778417E063141139Fce010982780140Aa0cD5Ab",
-    "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+    "0xCEC4a43eBB02f9B80916F1c718338169d6d5C1F0", // cUSDC
+    "0x627EA49279FD0dE89186A58b8758aD02B6Be2867", // Unitroller
+    "0xe16C7165C8FeA64069802aE4c4c9C320783f2b6e",
+    "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+    "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
     {
       leverageLevel: 15000,
       leverageBips: 10000,
-      minMinting: "100000000000000000", // 0.1 USDC
+      minMinting: "10000", // 0.1 USDC
     }
   );
 
