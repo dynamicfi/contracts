@@ -14,12 +14,12 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const DynaToken = await hre.ethers.getContractFactory("DynaToken");
-  const dynaToken = await DynaToken.deploy();
+  const Dynamic = await hre.ethers.getContractFactory("Dynamic");
+  const dynamic = await Dynamic.deploy();
 
-  await dynaToken.deployed();
+  await dynamic.deployed();
 
-  console.log("Dyna deployed to:", dynaToken.address);
+  console.log("DYNA deployed to: ", dynamic.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
