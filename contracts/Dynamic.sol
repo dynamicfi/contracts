@@ -1,4 +1,3 @@
-// contracts/DyERC20.sol
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
@@ -16,8 +15,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
  */
 
-contract DynaToken is ERC20 {
-    constructor() ERC20("DynamicToken", "Dyna") {
-        _mint(_msgSender(), 400000000000000000000000);
+contract Dynamic is ERC20 {
+    constructor() ERC20("Dynamic", "DYNA") {
+        _mint(_msgSender(), 400000 * 10 ** 18);
     }
 }
