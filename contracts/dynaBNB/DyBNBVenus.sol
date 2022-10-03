@@ -69,9 +69,12 @@ contract DyBNBVenus is DyETH {
     }
 
     function totalDeposits() public view virtual override returns (uint256) {
-        (, uint256 internalBalance, uint256 borrow, uint256 exchangeRate) = tokenDelegator.getAccountSnapshot(
-            address(this)
-        );
+        (
+            ,
+            uint256 internalBalance,
+            uint256 borrow,
+            uint256 exchangeRate
+        ) = tokenDelegator.getAccountSnapshot(address(this));
         return internalBalance.mul(exchangeRate).div(1e18).sub(borrow);
     }
 
@@ -153,10 +156,7 @@ contract DyBNBVenus is DyETH {
         }
     }
 
-    function _getAccountData()
-        internal
-        returns (uint256, uint256)
-    {
+    function _getAccountData() internal returns (uint256, uint256) {
         uint256 balance = tokenDelegator.balanceOfUnderlying(address(this));
         uint256 borrowed = tokenDelegator.borrowBalanceCurrent(address(this));
         return (balance, borrowed);
@@ -242,9 +242,12 @@ contract DyBNBVenus is DyETH {
     }
 
     function getActualLeverage() public view returns (uint256) {
-       (, uint256 internalBalance, uint256 borrow, uint256 exchangeRate) = tokenDelegator.getAccountSnapshot(
-            address(this)
-        );
+        (
+            ,
+            uint256 internalBalance,
+            uint256 borrow,
+            uint256 exchangeRate
+        ) = tokenDelegator.getAccountSnapshot(address(this));
         uint256 balance = internalBalance.mul(exchangeRate).div(1e18);
         return balance.mul(1e18).div(balance.sub(borrow));
     }
@@ -268,7 +271,13 @@ contract DyBNBVenus is DyETH {
             path[0] = address(xvsToken);
             path[1] = address(WBNB);
             uint256 _deadline = block.timestamp + 3000;
-            pancakeRouter.swapExactTokensForETH(xvsBalance, 0, path, address(this), _deadline);
+            pancakeRouter.swapExactTokensForETH(
+                xvsBalance,
+                0,
+                path,
+                address(this),
+                _deadline
+            );
         }
 
         uint256 amount = address(this).balance;
@@ -283,29 +292,42 @@ contract DyBNBVenus is DyETH {
         emit Reinvest(totalDeposits(), totalSupply());
     }
 
-    function rescueDeployedFunds(
-        uint256 minReturnAmountAccepted
-    ) external onlyOwner {
+    function rescueDeployedFunds(uint256 minReturnAmountAccepted)
+        external
+        onlyOwner
+    {
         uint256 balanceBefore = address(this).balance;
         (uint256 balance, uint256 borrowed) = _getAccountData();
         _unrollDebt(balance.sub(borrowed));
-        tokenDelegator.redeemUnderlying(tokenDelegator.balanceOfUnderlying(address(this)));
+        tokenDelegator.redeemUnderlying(
+            tokenDelegator.balanceOfUnderlying(address(this))
+        );
         uint256 balanceAfter = address(this).balance;
-        require(balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted, "DyBNBVenus::rescueDeployedFunds");
+        require(
+            balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted,
+            "DyBNBVenus::rescueDeployedFunds"
+        );
         if (depositEnable == true) {
             updateDepositsEnabled(false);
         }
     }
 
-    function distributeReward() public view returns(uint256){
-        uint256 xvsRewards = VenusLibrary.calculateReward(rewardController, IVenusBEP20Delegator(address(tokenDelegator)), address(this));
+    function distributeReward() public view returns (uint256) {
+        uint256 xvsRewards = VenusLibrary.calculateReward(
+            rewardController,
+            IVenusBEP20Delegator(address(tokenDelegator)),
+            address(this)
+        );
         if (xvsRewards == 0) {
             return 0;
         }
         address[] memory path = new address[](2);
         path[0] = address(xvsToken);
         path[1] = address(WBNB);
-        uint256[] memory amounts = pancakeRouter.getAmountsOut(xvsRewards, path);
+        uint256[] memory amounts = pancakeRouter.getAmountsOut(
+            xvsRewards,
+            path
+        );
         return amounts[1];
     }
 }

@@ -17,6 +17,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract Dynamic is ERC20 {
     constructor() ERC20("Dynamic", "DYNA") {
-        _mint(_msgSender(), 400000 * 10 ** 18);
+        _mint(_msgSender(), 400000 * 10**18);
     }
 }
