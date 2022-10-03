@@ -1,3 +1,3 @@
 # Dynamic
 
-Dynamic is consumer-friendly lending software for users to enjoy competitive yield on savings in a non-custodial fashion. Become a lender or borrow against your holdings in just two clicks. We help traders and investors save time with market aggregation and maximize their profit by consolidating yield into a single token (DYNA). We support 2 networks and are focused on adoption with the goal to displace aged rails. Join the waitlist
+Dynamic is consumer-friendly lending software for users to enjoy competitive yield on savings in a non-custodial fashion. Become a lender or borrow against your holdings in just two clicks. We help traders and investors save time with market aggregation and maximize their profit by consolidating yield into a single token (DYNA). We support 2 networks and are focused on adoption with the goal to displace aged rails. [Join the waitlist](https://www.dynamic.fi/waitlist) and stay tuned.
