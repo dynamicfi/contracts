@@ -1,5 +1,5 @@
 // contracts/compound/DyETHCompound.sol
-//SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -70,9 +70,12 @@ contract DyETHCompound is DyETH {
     }
 
     function totalDeposits() public view virtual override returns (uint256) {
-        (, uint256 internalBalance, uint256 borrow, uint256 exchangeRate) = tokenDelegator.getAccountSnapshot(
-            address(this)
-        );
+        (
+            ,
+            uint256 internalBalance,
+            uint256 borrow,
+            uint256 exchangeRate
+        ) = tokenDelegator.getAccountSnapshot(address(this));
         return internalBalance.mul(exchangeRate).div(1e18).sub(borrow);
     }
 
@@ -154,10 +157,7 @@ contract DyETHCompound is DyETH {
         }
     }
 
-    function _getAccountData()
-        internal
-        returns (uint256, uint256)
-    {
+    function _getAccountData() internal returns (uint256, uint256) {
         uint256 balance = tokenDelegator.balanceOfUnderlying(address(this));
         uint256 borrowed = tokenDelegator.borrowBalanceCurrent(address(this));
         return (balance, borrowed);
@@ -243,9 +243,12 @@ contract DyETHCompound is DyETH {
     }
 
     function getActualLeverage() public view returns (uint256) {
-       (, uint256 internalBalance, uint256 borrow, uint256 exchangeRate) = tokenDelegator.getAccountSnapshot(
-            address(this)
-        );
+        (
+            ,
+            uint256 internalBalance,
+            uint256 borrow,
+            uint256 exchangeRate
+        ) = tokenDelegator.getAccountSnapshot(address(this));
         uint256 balance = internalBalance.mul(exchangeRate).div(1e18);
         return balance.mul(1e18).div(balance.sub(borrow));
     }
@@ -266,12 +269,17 @@ contract DyETHCompound is DyETH {
         if (compBalance > 0) {
             compToken.approve(address(swapRouter), compBalance);
             uint24 poolFee = 3000;
-            ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
-                path: abi.encodePacked(address(compToken), poolFee, address(WETH)),
-                recipient: address(this),
-                amountIn: compBalance,
-                amountOutMinimum: 0
-            });
+            ISwapRouter.ExactInputParams memory params = ISwapRouter
+                .ExactInputParams({
+                    path: abi.encodePacked(
+                        address(compToken),
+                        poolFee,
+                        address(WETH)
+                    ),
+                    recipient: address(this),
+                    amountIn: compBalance,
+                    amountOutMinimum: 0
+                });
             swapRouter.exactInput(params);
             uint256 wethBalance = WETH.balanceOf(address(this));
             if (wethBalance > 0) {
@@ -291,22 +299,32 @@ contract DyETHCompound is DyETH {
         emit Reinvest(totalDeposits(), totalSupply());
     }
 
-    function rescueDeployedFunds(
-        uint256 minReturnAmountAccepted
-    ) external onlyOwner {
+    function rescueDeployedFunds(uint256 minReturnAmountAccepted)
+        external
+        onlyOwner
+    {
         uint256 balanceBefore = address(this).balance;
         (uint256 balance, uint256 borrowed) = _getAccountData();
         _unrollDebt(balance.sub(borrowed));
-        tokenDelegator.redeemUnderlying(tokenDelegator.balanceOfUnderlying(address(this)));
+        tokenDelegator.redeemUnderlying(
+            tokenDelegator.balanceOfUnderlying(address(this))
+        );
         uint256 balanceAfter = address(this).balance;
-        require(balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted, "DyETHCompound::rescueDeployedFunds");
+        require(
+            balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted,
+            "DyETHCompound::rescueDeployedFunds"
+        );
         if (depositEnable == true) {
             updateDepositsEnabled(false);
         }
     }
 
-    function compReward() public view returns(uint256){
-        uint256 compRewards = CompoundLibrary.calculateReward(rewardController, ICompoundERC20Delegator(address(tokenDelegator)), address(this));
+    function compReward() public view returns (uint256) {
+        uint256 compRewards = CompoundLibrary.calculateReward(
+            rewardController,
+            ICompoundERC20Delegator(address(tokenDelegator)),
+            address(this)
+        );
         return compRewards;
     }
 }

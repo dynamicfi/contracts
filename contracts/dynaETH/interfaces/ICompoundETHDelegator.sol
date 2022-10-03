@@ -1,5 +1,5 @@
 // contracts/compound/interfaces/ICompoundETHDelegator.sol
-//SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 /**
@@ -24,8 +24,16 @@ interface ICompoundETHDelegator {
     function balanceOf(address owner) external view returns (uint256);
 
     function balanceOfUnderlying(address owner) external returns (uint256);
-    
-    function getAccountSnapshot(address account) external view returns (uint, uint, uint, uint);
+
+    function getAccountSnapshot(address account)
+        external
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        );
 
     function borrow(uint256 borrowAmount) external returns (uint256);
 
@@ -33,7 +41,10 @@ interface ICompoundETHDelegator {
 
     function borrowIndex() external view returns (uint256);
 
-    function borrowBalanceStored(address account) external view returns (uint256);
+    function borrowBalanceStored(address account)
+        external
+        view
+        returns (uint256);
 
     function totalBorrows() external view returns (uint256);
 

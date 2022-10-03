@@ -1,5 +1,5 @@
 // contracts/DyETH.sol
-//SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import "./DyToken.sol";
@@ -22,9 +22,11 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 abstract contract DyETH is DyToken, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    constructor(string memory name_, string memory symbol_) DyToken(name_, symbol_) {}
+    constructor(string memory name_, string memory symbol_)
+        DyToken(name_, symbol_)
+    {}
 
-    function deposit(uint256 amountUnderlying_) external nonReentrant payable {
+    function deposit(uint256 amountUnderlying_) external payable nonReentrant {
         _deposit(amountUnderlying_);
     }
 
@@ -32,12 +34,20 @@ abstract contract DyETH is DyToken, ReentrancyGuard {
         _withdraw(amount_);
     }
 
-    function _doTransferIn(address from_, uint256 amount_) virtual override internal {
+    function _doTransferIn(address from_, uint256 amount_)
+        internal
+        virtual
+        override
+    {
         require(_msgSender() == from_, "sender mismatch");
         require(msg.value == amount_, "value mismatch");
     }
 
-    function _doTransferOut(address payable to_, uint256 amount_) virtual override internal {
+    function _doTransferOut(address payable to_, uint256 amount_)
+        internal
+        virtual
+        override
+    {
         to_.transfer(amount_);
     }
 }

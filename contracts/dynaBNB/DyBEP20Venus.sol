@@ -1,5 +1,5 @@
 // contracts/Venus/DyBEP20Venus.sol
-//SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -50,6 +50,7 @@ contract DyBEP20Venus is DyERC20 {
         address rewardController_,
         address xvsAddress_,
         address WBNB_,
+        address DYNA_,
         address pancakeRouter_,
         LeverageSettings memory leverageSettings_
     ) DyERC20(underlying_, name_, symbol_) {
@@ -58,6 +59,7 @@ contract DyBEP20Venus is DyERC20 {
         minMinting = leverageSettings_.minMinting;
         xvsToken = IERC20(xvsAddress_);
         WBNB = IERC20(WBNB_);
+        DYNA = DYNA_;
         pancakeRouter = IPancakeRouter(pancakeRouter_);
         _updateLeverage(
             leverageSettings_.leverageLevel,
@@ -69,9 +71,12 @@ contract DyBEP20Venus is DyERC20 {
     }
 
     function totalDeposits() public view virtual override returns (uint256) {
-        (, uint256 internalBalance, uint256 borrow, uint256 exchangeRate) = tokenDelegator.getAccountSnapshot(
-            address(this)
-        );
+        (
+            ,
+            uint256 internalBalance,
+            uint256 borrow,
+            uint256 exchangeRate
+        ) = tokenDelegator.getAccountSnapshot(address(this));
         return internalBalance.mul(exchangeRate).div(1e18).sub(borrow);
     }
 
@@ -159,10 +164,7 @@ contract DyBEP20Venus is DyERC20 {
         underlying.approve(address(tokenDelegator), 0);
     }
 
-    function _getAccountData()
-        internal
-        returns (uint256, uint256)
-    {
+    function _getAccountData() internal returns (uint256, uint256) {
         uint256 balance = tokenDelegator.balanceOfUnderlying(address(this));
         uint256 borrowed = tokenDelegator.borrowBalanceCurrent(address(this));
         return (balance, borrowed);
@@ -267,7 +269,7 @@ contract DyBEP20Venus is DyERC20 {
             address[] memory path = new address[](3);
             path[0] = address(xvsToken);
             path[1] = address(WBNB);
-            path[2] = address(underlying);
+            path[2] = address(DYNA);
             uint256 _deadline = block.timestamp + 3000;
             pancakeRouter.swapExactTokensForTokens(
                 xvsBalance,
@@ -277,6 +279,10 @@ contract DyBEP20Venus is DyERC20 {
                 _deadline
             );
         }
+
+        uint256 dynaReward = distributeReward();
+
+        _distributeDynaByAmount(dynaReward);
 
         uint256 amount = underlying.balanceOf(address(this));
         if (!userDeposit) {
@@ -290,37 +296,75 @@ contract DyBEP20Venus is DyERC20 {
     }
 
     function getActualLeverage() public view returns (uint256) {
-       (, uint256 internalBalance, uint256 borrow, uint256 exchangeRate) = tokenDelegator.getAccountSnapshot(
-            address(this)
-        );
+        (
+            ,
+            uint256 internalBalance,
+            uint256 borrow,
+            uint256 exchangeRate
+        ) = tokenDelegator.getAccountSnapshot(address(this));
         uint256 balance = internalBalance.mul(exchangeRate).div(1e18);
         return balance.mul(1e18).div(balance.sub(borrow));
     }
 
-    function rescueDeployedFunds(
-        uint256 minReturnAmountAccepted
-    ) external onlyOwner {
+    function rescueDeployedFunds(uint256 minReturnAmountAccepted)
+        external
+        onlyOwner
+    {
         uint256 balanceBefore = underlying.balanceOf(address(this));
         (uint256 balance, uint256 borrowed) = _getAccountData();
         _unrollDebt(balance.sub(borrowed));
-        tokenDelegator.redeemUnderlying(tokenDelegator.balanceOfUnderlying(address(this)));
+        tokenDelegator.redeemUnderlying(
+            tokenDelegator.balanceOfUnderlying(address(this))
+        );
         uint256 balanceAfter = underlying.balanceOf(address(this));
-        require(balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted, "DyBEP20Venus::rescueDeployedFunds");
+        require(
+            balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted,
+            "DyBEP20Venus::rescueDeployedFunds"
+        );
         if (depositEnable == true) {
             updateDepositsEnabled(false);
         }
     }
 
-    function distributeReward() public view returns(uint256){
-        uint256 xvsRewards = VenusLibrary.calculateReward(rewardController, tokenDelegator, address(this));
+    function distributeReward() public view returns (uint256) {
+        uint256 xvsRewards = VenusLibrary.calculateReward(
+            rewardController,
+            tokenDelegator,
+            address(this)
+        );
         if (xvsRewards == 0) {
             return 0;
         }
         address[] memory path = new address[](3);
         path[0] = address(xvsToken);
         path[1] = address(WBNB);
-        path[2] = address(underlying);
-        uint256[] memory amounts = pancakeRouter.getAmountsOut(xvsRewards, path);
+        path[2] = address(DYNA);
+        uint256[] memory amounts = pancakeRouter.getAmountsOut(
+            xvsRewards,
+            path
+        );
         return amounts[2];
+    }
+
+    function _distributeDynaByAmount(uint256 _dynaAmount) internal {
+        uint256 totalProduct = _calculateTotalProduct();
+        for (uint256 i = 0; i < depositers.length; i++) {
+            DepositStruct storage user = userInfo[depositers[i]];
+            user.dynaBalance +=
+                (_dynaAmount *
+                    user.amount *
+                    (block.timestamp - user.lastDepositTime)) /
+                totalProduct;
+            user.lastDepositTime = block.timestamp;
+        }
+    }
+
+    function _calculateTotalProduct() internal view returns (uint256) {
+        uint256 total = 0;
+        for (uint256 i = 0; i < depositers.length; i++) {
+            DepositStruct memory user = userInfo[depositers[i]];
+            total += user.amount * (block.timestamp - user.lastDepositTime);
+        }
+        return total;
     }
 }
