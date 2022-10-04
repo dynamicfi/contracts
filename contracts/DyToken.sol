@@ -24,8 +24,9 @@ abstract contract DyToken is ERC20, Ownable {
     bool public depositEnable;
     uint256 public minTokensToReinvest;
     mapping(address => uint256) public depositAverageRate;
-    address[] public depositers;
+    address[] public depositors;
     address public DYNA;
+    address public BUSD;
 
     struct DepositStruct {
         uint256 amount;
