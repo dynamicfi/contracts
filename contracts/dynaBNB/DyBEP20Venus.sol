@@ -51,6 +51,7 @@ contract DyBEP20Venus is DyERC20 {
         address xvsAddress_,
         address WBNB_,
         address DYNA_,
+        address BUSD_,
         address pancakeRouter_,
         LeverageSettings memory leverageSettings_
     ) DyERC20(underlying_, name_, symbol_) {
@@ -60,6 +61,7 @@ contract DyBEP20Venus is DyERC20 {
         xvsToken = IERC20(xvsAddress_);
         WBNB = IERC20(WBNB_);
         DYNA = DYNA_;
+        BUSD = BUSD_;
         pancakeRouter = IPancakeRouter(pancakeRouter_);
         _updateLeverage(
             leverageSettings_.leverageLevel,
@@ -348,23 +350,51 @@ contract DyBEP20Venus is DyERC20 {
 
     function _distributeDynaByAmount(uint256 _dynaAmount) internal {
         uint256 totalProduct = _calculateTotalProduct();
-        for (uint256 i = 0; i < depositers.length; i++) {
-            DepositStruct storage user = userInfo[depositers[i]];
+        for (uint256 i = 0; i < depositors.length; i++) {
+            DepositStruct storage user = userInfo[depositors[i]];
+            uint256 stackingPeriod = block.timestamp - user.lastDepositTime;
+            uint256 APY = _getAPYValue();
             user.dynaBalance +=
-                (_dynaAmount *
-                    user.amount *
-                    (block.timestamp - user.lastDepositTime)) /
-                totalProduct;
+                (_dynaAmount * user.amount * stackingPeriod) /
+                totalProduct +
+                (user.amount * stackingPeriod * APY) /
+                (ONE_MONTH_IN_SECONDS * 1000);
             user.lastDepositTime = block.timestamp;
         }
     }
 
     function _calculateTotalProduct() internal view returns (uint256) {
         uint256 total = 0;
-        for (uint256 i = 0; i < depositers.length; i++) {
-            DepositStruct memory user = userInfo[depositers[i]];
+        for (uint256 i = 0; i < depositors.length; i++) {
+            DepositStruct memory user = userInfo[depositors[i]];
             total += user.amount * (block.timestamp - user.lastDepositTime);
         }
         return total;
+    }
+
+    function _getAPYValue() internal view returns (uint256) {
+        uint256 totalValue = _getVaultValueInDollar();
+        uint256 percent = 0;
+
+        for (uint256 i = 0; i < totalValues.length; i++) {
+            if (totalValue >= totalValues[i]) {
+                percent = percentByValues[i];
+                break;
+            }
+        }
+
+        return percent;
+    }
+
+    function _getVaultValueInDollar() internal view returns (uint256) {
+        address[] memory path = new address[](3);
+        path[0] = address(xvsToken);
+        path[1] = address(WBNB);
+        path[2] = address(BUSD);
+        uint256[] memory amounts = pancakeRouter.getAmountsOut(
+            totalTokenStack,
+            path
+        );
+        return amounts[2];
     }
 }
