@@ -57,6 +57,8 @@ describe("Staking", function () {
       const currentInterest2 = await this.stakingContract.getInterest(0);
       await this.stakingContract.withdraw(0);
       console.log(web3.utils.fromWei(currentInterest2.toString()));
+      const stakingIds2 = await this.stakingContract.getStakingIds();
+      console.log(stakingIds2);
     });
 
     // it("should withdraw after 2 days success", async function () {

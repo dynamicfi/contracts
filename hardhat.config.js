@@ -64,6 +64,10 @@ module.exports = {
     currency: "USD",
   },
   etherscan: {
-    apiKey: process.env.BSCSCAN_API_KEY,
+    apiKey: {
+      bsc: process.env.BSCSCAN_API_KEY,
+      bscTestnet: process.env.BSCSCAN_API_KEY,
+      goerli: "4YX8ZPTGDSEFH8CAD1U8YWPC3SYJUA4KT6",
+    }
   },
 };

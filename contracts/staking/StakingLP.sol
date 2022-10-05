@@ -5,8 +5,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/IPancakePair.sol";
+import "./interfaces/IPancakeRouter.sol";
 
-contract Staking is Ownable {
+contract StakingLP is Ownable {
     using SafeMath for uint256;
     using SafeMath for uint112;
     using Counters for Counters.Counter;
@@ -35,8 +37,6 @@ contract Staking is Ownable {
         uint256 _interest
     );
 
-    IERC20 public stakingToken;
-
     struct StakeDetail {
         address staker;
         uint256 startAt;
@@ -59,8 +59,18 @@ contract Staking is Ownable {
     uint256 constant ONE_YEAR_IN_SECONDS = 365 * ONE_DAY_IN_SECONDS;
     uint256 constant DENOMINATOR = 10000;
 
-    constructor(address _stakingToken) {
-        stakingToken = IERC20(_stakingToken);
+    IPancakeRouter public router;
+    IPancakePair public pair;
+    IERC20 public rewardToken;
+
+    constructor(
+        address _pair,
+        address _router,
+        address _rewardToken
+    ) {
+        pair = IPancakePair(_pair);
+        router = IPancakeRouter(_router);
+        rewardToken = IERC20(_rewardToken);
         enabled = false;
 
         terms[0] = 3200;
@@ -109,10 +119,26 @@ contract Staking is Ownable {
             _addresses.push(msg.sender);
         }
         _addressToIds[msg.sender].push(currentId);
-        stakingToken.transferFrom(msg.sender, address(this), _amount);
+        pair.transferFrom(msg.sender, address(this), _amount);
         _tokenIdCounter.increment();
 
         emit Stake(msg.sender, currentId, block.timestamp, _amount);
+    }
+
+    function getPairPrice() public view returns (uint256) {
+        uint112 reserve0;
+        uint112 reserve1;
+        (reserve0, reserve1, ) = pair.getReserves();
+
+        uint256 totalPoolValue = reserve1.mul(2);
+        uint256 mintedPair = pair.totalSupply();
+        uint256 pairPriceInETH = totalPoolValue.mul(1e18).div(mintedPair);
+        // return pairPriceInETH;
+        address[] memory path = new address[](2);
+        path[0] = router.WETH();
+        path[1] = address(rewardToken);
+        uint256[] memory amounts = router.getAmountsOut(pairPriceInETH, path);
+        return amounts[1];
     }
 
     function getPrincipal(uint256 _id) external view returns (uint256) {
@@ -134,7 +160,7 @@ contract Staking is Ownable {
             .mul(duration)
             .div(ONE_YEAR_IN_SECONDS)
             .div(10000);
-        return interest;
+        return interest.mul(getPairPrice()).div(1e18);
     }
 
     function claim(uint256 _id) external onlyStakeholder(_id) {
@@ -142,7 +168,7 @@ contract Staking is Ownable {
         require(interest > 0, "Staking: No interest to claim");
         StakeDetail storage currentStake = idToStakeDetail[_id];
         currentStake.lastClaimAt = block.timestamp;
-        stakingToken.transfer(msg.sender, interest);
+        rewardToken.transfer(msg.sender, interest);
         emit Claim(msg.sender, _id, block.timestamp, interest);
     }
 
@@ -176,7 +202,8 @@ contract Staking is Ownable {
                 }
             }
         }
-        stakingToken.transfer(msg.sender, principal.add(interest));
+        pair.transfer(msg.sender, principal);
+        rewardToken.transfer(msg.sender, interest);
 
         emit Withdraw(
             msg.sender,
@@ -206,6 +233,6 @@ contract Staking is Ownable {
         onlyOwner
         returns (bool)
     {
-        return stakingToken.transfer(_recipient, _amount);
+        return pair.transfer(_recipient, _amount);
     }
 }
