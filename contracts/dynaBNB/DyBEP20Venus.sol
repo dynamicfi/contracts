@@ -51,7 +51,7 @@ contract DyBEP20Venus is DyERC20 {
         address xvsAddress_,
         address WBNB_,
         address DYNA_,
-        address BUSD_,
+        address USD_,
         address pancakeRouter_,
         LeverageSettings memory leverageSettings_
     ) DyERC20(underlying_, name_, symbol_) {
@@ -61,7 +61,7 @@ contract DyBEP20Venus is DyERC20 {
         xvsToken = IERC20(xvsAddress_);
         WBNB = IERC20(WBNB_);
         DYNA = DYNA_;
-        BUSD = BUSD_;
+        USD = USD_;
         pancakeRouter = IPancakeRouter(pancakeRouter_);
         _updateLeverage(
             leverageSettings_.leverageLevel,
@@ -263,6 +263,7 @@ contract DyBEP20Venus is DyERC20 {
     function _reinvest(bool userDeposit) private {
         address[] memory markets = new address[](1);
         markets[0] = address(tokenDelegator);
+        uint256 dynaReward = distributeReward();
         rewardController.claimVenus(address(this), markets);
 
         uint256 xvsBalance = xvsToken.balanceOf(address(this));
@@ -281,8 +282,6 @@ contract DyBEP20Venus is DyERC20 {
                 _deadline
             );
         }
-
-        uint256 dynaReward = distributeReward();
 
         _distributeDynaByAmount(dynaReward);
 
@@ -390,7 +389,7 @@ contract DyBEP20Venus is DyERC20 {
         address[] memory path = new address[](3);
         path[0] = address(xvsToken);
         path[1] = address(WBNB);
-        path[2] = address(BUSD);
+        path[2] = address(USD);
         uint256[] memory amounts = pancakeRouter.getAmountsOut(
             totalTokenStack,
             path
