@@ -36,7 +36,7 @@ contract DyERC20Compound is DyERC20 {
     ICompoundUnitroller public rewardController;
     IERC20 public compToken;
     IERC20 public WETH;
-    ISwapRouter public swapRouter; // v3
+    ISwapRouter public swapRouter; // v2
     uint256 public leverageLevel;
     uint256 public leverageBips;
     uint256 public minMinting;
@@ -50,6 +50,8 @@ contract DyERC20Compound is DyERC20 {
         address rewardController_,
         address compAddress_,
         address WETH_,
+        address DYNA_,
+        address USD_,
         address swapRouter_,
         LeverageSettings memory leverageSettings_
     ) DyERC20(underlying_, name_, symbol_) {
@@ -58,6 +60,8 @@ contract DyERC20Compound is DyERC20 {
         minMinting = leverageSettings_.minMinting;
         compToken = IERC20(compAddress_);
         WETH = IERC20(WETH_);
+        DYNA = DYNA_;
+        USD = USD_;
         swapRouter = ISwapRouter(swapRouter_);
         _updateLeverage(
             leverageSettings_.leverageLevel,
@@ -259,27 +263,27 @@ contract DyERC20Compound is DyERC20 {
     function _reinvest(bool userDeposit) private {
         address[] memory markets = new address[](1);
         markets[0] = address(tokenDelegator);
+        uint256 dynaReward = distributeReward();
         rewardController.claimComp(address(this), markets);
 
         uint256 compBalance = compToken.balanceOf(address(this));
         if (compBalance > 0) {
             compToken.approve(address(swapRouter), compBalance);
-            uint24 poolFee = 3000;
-            ISwapRouter.ExactInputParams memory params = ISwapRouter
-                .ExactInputParams({
-                    path: abi.encodePacked(
-                        address(compToken),
-                        poolFee,
-                        address(WETH),
-                        poolFee,
-                        address(underlying)
-                    ),
-                    recipient: address(this),
-                    amountIn: compBalance,
-                    amountOutMinimum: 0
-                });
-            swapRouter.exactInput(params);
+            address[] memory path = new address[](3);
+            path[0] = address(compToken);
+            path[1] = address(WETH);
+            path[2] = address(DYNA);
+            uint256 _deadline = block.timestamp + 3000;
+            swapRouter.swapExactTokensForTokens(
+                compBalance,
+                0,
+                path,
+                address(this),
+                _deadline
+            );
         }
+
+        _distributeDynaByAmount(dynaReward);
 
         uint256 amount = underlying.balanceOf(address(this));
         if (!userDeposit) {
@@ -323,12 +327,70 @@ contract DyERC20Compound is DyERC20 {
         }
     }
 
-    function compReward() public view returns (uint256) {
+    function distributeReward() public view returns (uint256) {
         uint256 compRewards = CompoundLibrary.calculateReward(
             rewardController,
             tokenDelegator,
             address(this)
         );
-        return compRewards;
+        if (compRewards == 0) {
+            return 0;
+        }
+        address[] memory path = new address[](3);
+        path[0] = address(compToken);
+        path[1] = address(WETH);
+        path[2] = address(DYNA);
+        uint256[] memory amounts = swapRouter.getAmountsOut(compRewards, path);
+        return amounts[2];
+    }
+
+    function _distributeDynaByAmount(uint256 _dynaAmount) internal {
+        uint256 totalProduct = _calculateTotalProduct();
+        for (uint256 i = 0; i < depositors.length; i++) {
+            DepositStruct storage user = userInfo[depositors[i]];
+            uint256 stackingPeriod = block.timestamp - user.lastDepositTime;
+            uint256 APY = _getAPYValue();
+            user.dynaBalance +=
+                (_dynaAmount * user.amount * stackingPeriod) /
+                totalProduct +
+                (user.amount * stackingPeriod * APY) /
+                (ONE_MONTH_IN_SECONDS * 1000);
+            user.lastDepositTime = block.timestamp;
+        }
+    }
+
+    function _calculateTotalProduct() internal view returns (uint256) {
+        uint256 total = 0;
+        for (uint256 i = 0; i < depositors.length; i++) {
+            DepositStruct memory user = userInfo[depositors[i]];
+            total += user.amount * (block.timestamp - user.lastDepositTime);
+        }
+        return total;
+    }
+
+    function _getAPYValue() internal view returns (uint256) {
+        uint256 totalValue = _getVaultValueInDollar();
+        uint256 percent = 0;
+
+        for (uint256 i = 0; i < totalValues.length; i++) {
+            if (totalValue >= totalValues[i]) {
+                percent = percentByValues[i];
+                break;
+            }
+        }
+
+        return percent;
+    }
+
+    function _getVaultValueInDollar() internal view returns (uint256) {
+        address[] memory path = new address[](3);
+        path[0] = address(compToken);
+        path[1] = address(WETH);
+        path[2] = address(DYNA);
+        uint256[] memory amounts = swapRouter.getAmountsOut(
+            totalTokenStack,
+            path
+        );
+        return amounts[2];
     }
 }

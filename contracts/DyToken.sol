@@ -26,7 +26,7 @@ abstract contract DyToken is ERC20, Ownable {
     mapping(address => uint256) public depositAverageRate;
     address[] public depositors;
     address public DYNA;
-    address public BUSD;
+    address public USD;
 
     struct DepositStruct {
         uint256 amount;
@@ -82,7 +82,7 @@ abstract contract DyToken is ERC20, Ownable {
      * @param amountUnderlying_ The amount of the underlying asset to supply
      */
     function _deposit(uint256 amountUnderlying_) internal {
-        require(depositEnable == true, "DyBEP20Venus::deposit");
+        require(depositEnable == true, "DyToken::deposit");
         require(amountUnderlying_ > 0, "DyToken::amountUnderlying_ > 0");
         uint256 _mintTokens;
         uint256 _totalDeposit = _totalDepositsFresh();

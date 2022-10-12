@@ -50,6 +50,8 @@ contract DyBNBVenus is DyETH {
         address rewardController_,
         address xvsAddress_,
         address WBNB_,
+        address DYNA_,
+        address USD_,
         address pancakeRouter_,
         LeverageSettings memory leverageSettings_
     ) DyETH(name_, symbol_) {
@@ -63,6 +65,8 @@ contract DyBNBVenus is DyETH {
         );
         xvsToken = IERC20(xvsAddress_);
         WBNB = IERC20(WBNB_);
+        DYNA = DYNA_;
+        USD = USD_;
         pancakeRouter = IPancakeRouter(pancakeRouter_);
         _enterMarket();
         updateDepositsEnabled(true);
@@ -262,16 +266,18 @@ contract DyBNBVenus is DyETH {
     function _reinvest(uint256 userDeposit) private {
         address[] memory markets = new address[](1);
         markets[0] = address(tokenDelegator);
+        uint256 dynaReward = distributeReward();
         rewardController.claimVenus(address(this), markets);
 
         uint256 xvsBalance = xvsToken.balanceOf(address(this));
         if (xvsBalance > 0) {
             xvsToken.approve(address(pancakeRouter), xvsBalance);
-            address[] memory path = new address[](2);
+            address[] memory path = new address[](3);
             path[0] = address(xvsToken);
             path[1] = address(WBNB);
+            path[2] = address(DYNA);
             uint256 _deadline = block.timestamp + 3000;
-            pancakeRouter.swapExactTokensForETH(
+            pancakeRouter.swapExactTokensForTokens(
                 xvsBalance,
                 0,
                 path,
@@ -279,6 +285,8 @@ contract DyBNBVenus is DyETH {
                 _deadline
             );
         }
+
+        _distributeDynaByAmount(dynaReward);
 
         uint256 amount = address(this).balance;
         if (userDeposit == 0) {
@@ -321,13 +329,64 @@ contract DyBNBVenus is DyETH {
         if (xvsRewards == 0) {
             return 0;
         }
-        address[] memory path = new address[](2);
+        address[] memory path = new address[](3);
         path[0] = address(xvsToken);
         path[1] = address(WBNB);
+        path[2] = address(DYNA);
         uint256[] memory amounts = pancakeRouter.getAmountsOut(
             xvsRewards,
             path
         );
-        return amounts[1];
+        return amounts[2];
+    }
+
+    function _distributeDynaByAmount(uint256 _dynaAmount) internal {
+        uint256 totalProduct = _calculateTotalProduct();
+        for (uint256 i = 0; i < depositors.length; i++) {
+            DepositStruct storage user = userInfo[depositors[i]];
+            uint256 stackingPeriod = block.timestamp - user.lastDepositTime;
+            uint256 APY = _getAPYValue();
+            user.dynaBalance +=
+                (_dynaAmount * user.amount * stackingPeriod) /
+                totalProduct +
+                (user.amount * stackingPeriod * APY) /
+                (ONE_MONTH_IN_SECONDS * 1000);
+            user.lastDepositTime = block.timestamp;
+        }
+    }
+
+    function _calculateTotalProduct() internal view returns (uint256) {
+        uint256 total = 0;
+        for (uint256 i = 0; i < depositors.length; i++) {
+            DepositStruct memory user = userInfo[depositors[i]];
+            total += user.amount * (block.timestamp - user.lastDepositTime);
+        }
+        return total;
+    }
+
+    function _getAPYValue() internal view returns (uint256) {
+        uint256 totalValue = _getVaultValueInDollar();
+        uint256 percent = 0;
+
+        for (uint256 i = 0; i < totalValues.length; i++) {
+            if (totalValue >= totalValues[i]) {
+                percent = percentByValues[i];
+                break;
+            }
+        }
+
+        return percent;
+    }
+
+    function _getVaultValueInDollar() internal view returns (uint256) {
+        address[] memory path = new address[](3);
+        path[0] = address(xvsToken);
+        path[1] = address(WBNB);
+        path[2] = address(USD);
+        uint256[] memory amounts = pancakeRouter.getAmountsOut(
+            totalTokenStack,
+            path
+        );
+        return amounts[2];
     }
 }

@@ -21,6 +21,17 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 abstract contract DyETH is DyToken, ReentrancyGuard {
     using SafeERC20 for IERC20;
+    uint256[] public totalValues = [
+        0,
+        1000000,
+        10000000,
+        100000000,
+        1000000000
+    ]; // for total value in dollar
+
+    uint256[] public percentByValues = [80, 65, 50, 35, 20];
+    uint256 totalTokenStack = 0;
+    uint256 ONE_MONTH_IN_SECONDS = 30 days;
 
     constructor(string memory name_, string memory symbol_)
         DyToken(name_, symbol_)
