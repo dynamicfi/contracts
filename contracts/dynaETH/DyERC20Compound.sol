@@ -368,7 +368,7 @@ contract DyERC20Compound is DyERC20 {
         return total;
     }
 
-    function _getAPYValue() internal view returns (uint256) {
+    function _getAPYValue() public view returns (uint256) {
         uint256 totalValue = _getVaultValueInDollar();
         uint256 percent = 0;
 
