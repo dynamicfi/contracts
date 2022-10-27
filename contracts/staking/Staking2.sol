@@ -57,6 +57,7 @@ contract Staking2 {
 
     function redeem(uint256 _redeemAmount) external {
         StakeDetail storage stakeDetail = stakers[msg.sender];
+        require(stakeDetail.firstStakeAt > 0, "Staking2: no stake");
         require(
             stakeDetail.principal >= _redeemAmount,
             "Staking2: redeem amount must be less than principal"
@@ -74,6 +75,7 @@ contract Staking2 {
 
     function compound() external {
         StakeDetail storage stakeDetail = stakers[msg.sender];
+        require(stakeDetail.firstStakeAt > 0, "Staking2: no stake");
         uint256 interest = stakeDetail
             .principal
             .mul(apr)
