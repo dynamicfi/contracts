@@ -33,6 +33,9 @@ contract DyBNBVenus is DyETH {
         uint256 minMinting;
     }
 
+    event TrackingDeposit(uint256 amount, uint256 usdt);
+    event TrackingWithdraw(uint256 amount, uint256 usdt);
+
     IVenusBNBDelegator public tokenDelegator;
     IVenusUnitroller public rewardController;
     IERC20 public xvsToken;
@@ -70,6 +73,16 @@ contract DyBNBVenus is DyETH {
         pancakeRouter = IPancakeRouter(pancakeRouter_);
         _enterMarket();
         updateDepositsEnabled(true);
+    }
+
+    function deposit(uint256 amountUnderlying_) public payable override(DyETH) {
+        super.deposit(amountUnderlying_);
+        emit TrackingDeposit(amountUnderlying_, _getVaultValueInDollar());
+    }
+
+    function withdraw(uint256 amount_) public override(DyETH) {
+        super.withdraw(amount_);
+        emit TrackingWithdraw(amount_, _getVaultValueInDollar());
     }
 
     function totalDeposits() public view virtual override returns (uint256) {

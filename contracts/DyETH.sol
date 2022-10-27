@@ -37,11 +37,16 @@ abstract contract DyETH is DyToken, ReentrancyGuard {
         DyToken(name_, symbol_)
     {}
 
-    function deposit(uint256 amountUnderlying_) external payable nonReentrant {
+    function deposit(uint256 amountUnderlying_)
+        public
+        payable
+        virtual
+        nonReentrant
+    {
         _deposit(amountUnderlying_);
     }
 
-    function withdraw(uint256 amount_) external nonReentrant {
+    function withdraw(uint256 amount_) public virtual nonReentrant {
         _withdraw(amount_);
     }
 

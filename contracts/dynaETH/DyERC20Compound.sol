@@ -32,6 +32,9 @@ contract DyERC20Compound is DyERC20 {
         uint256 minMinting;
     }
 
+    event TrackingDeposit(uint256 amount, uint256 usdt);
+    event TrackingWithdraw(uint256 amount, uint256 usdt);
+
     ICompoundERC20Delegator public tokenDelegator;
     ICompoundUnitroller public rewardController;
     IERC20 public compToken;
@@ -70,6 +73,16 @@ contract DyERC20Compound is DyERC20 {
         );
         _enterMarket();
         updateDepositsEnabled(true);
+    }
+
+    function deposit(uint256 amountUnderlying_) public override(DyERC20) {
+        super.deposit(amountUnderlying_);
+        emit TrackingDeposit(amountUnderlying_, _getVaultValueInDollar());
+    }
+
+    function withdraw(uint256 amount_) public override(DyERC20) {
+        super.withdraw(amount_);
+        emit TrackingWithdraw(amount_, _getVaultValueInDollar());
     }
 
     function totalDeposits() public view virtual override returns (uint256) {
