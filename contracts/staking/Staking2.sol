@@ -27,7 +27,7 @@ contract Staking2 {
 
     mapping(address => StakeDetail) public stakers;
 
-    function stake(uint256 _stakeAmount) external {
+    function deposit(uint256 _stakeAmount) external {
         require(
             _stakeAmount > 0,
             "Staking2: stake amount must be greater than 0"
