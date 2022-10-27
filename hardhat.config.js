@@ -66,7 +66,7 @@ module.exports = {
   etherscan: {
     apiKey: {
       bsc: process.env.BSCSCAN_API_KEY,
-      bscTestnet: process.env.BSCSCAN_API_KEY,
+      bscTestnet: "MGYY3TKJVMX6D1WMSB4X34BEC1BVQ6E7F4",
       goerli: "4YX8ZPTGDSEFH8CAD1U8YWPC3SYJUA4KT6",
     }
   },
