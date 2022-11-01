@@ -11,6 +11,8 @@ contract Staking2 {
     uint256 constant RATE_PRECISION = 10000;
     uint256 constant ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
     uint256 constant ONE_DAY_IN_SECONDS = 24 * 60 * 60;
+
+    uint256 constant PREROID_PRECISION = 10000;
     IERC20 public token;
 
     constructor(IERC20 _token) {
@@ -54,12 +56,12 @@ contract Staking2 {
     function getInterest(address _staker) public view returns (uint256) {
         StakeDetail memory stakeDetail = stakers[_staker];
         uint256 interest = 0;
-        uint256 periods = block.timestamp.sub(stakeDetail.lastStakeAt).div(
+        uint256 periods = block.timestamp.sub(stakeDetail.lastStakeAt).mul(PREROID_PRECISION).div(
             ONE_DAY_IN_SECONDS
         );
         for (uint256 i = 0; i < periods; i++) {
             interest = interest.add(
-                stakeDetail.principal.mul(apy).div(RATE_PRECISION)
+                stakeDetail.principal.mul(apy).div(RATE_PRECISION).div(PREROID_PRECISION)
             );
         }
         return interest;
@@ -87,7 +89,7 @@ contract Staking2 {
             );
             for (uint256 i = 0; i < periods; i++) {
                 interest = interest.add(
-                    stakeDetail.principal.mul(apy).div(RATE_PRECISION)
+                    stakeDetail.principal.mul(apy).div(RATE_PRECISION).div(PREROID_PRECISION)
                 );
             }
             stakeDetail.principal = stakeDetail.principal.add(interest);
@@ -104,7 +106,7 @@ contract Staking2 {
         uint256 interest = 0;
         for (uint256 i = 0; i < periods; i++) {
             interest = interest.add(
-                stakeDetail.principal.mul(apy).div(RATE_PRECISION)
+                stakeDetail.principal.mul(apy).div(RATE_PRECISION).div(PREROID_PRECISION)
             );
         }
         stakeDetail.principal = stakeDetail.principal.add(interest);
