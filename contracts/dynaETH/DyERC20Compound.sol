@@ -282,10 +282,9 @@ contract DyERC20Compound is DyERC20 {
         uint256 compBalance = compToken.balanceOf(address(this));
         if (compBalance > 0) {
             compToken.approve(address(swapRouter), compBalance);
-            address[] memory path = new address[](3);
+            address[] memory path = new address[](2);
             path[0] = address(compToken);
-            path[1] = address(WETH);
-            path[2] = address(DYNA);
+            path[1] = address(DYNA);
             uint256 _deadline = block.timestamp + 3000;
             swapRouter.swapExactTokensForTokens(
                 compBalance,
@@ -349,12 +348,11 @@ contract DyERC20Compound is DyERC20 {
         if (compRewards == 0) {
             return 0;
         }
-        address[] memory path = new address[](3);
+        address[] memory path = new address[](2);
         path[0] = address(compToken);
-        path[1] = address(WETH);
-        path[2] = address(DYNA);
+        path[1] = address(DYNA);
         uint256[] memory amounts = swapRouter.getAmountsOut(compRewards, path);
-        return amounts[2];
+        return amounts[1];
     }
 
     function _distributeDynaByAmount(uint256 _dynaAmount) internal {
@@ -396,14 +394,16 @@ contract DyERC20Compound is DyERC20 {
     }
 
     function _getVaultValueInDollar() internal view returns (uint256) {
-        address[] memory path = new address[](3);
+        if (totalTokenStack == 0) {
+            return 0;
+        }
+        address[] memory path = new address[](2);
         path[0] = address(compToken);
-        path[1] = address(WETH);
-        path[2] = address(DYNA);
+        path[1] = address(DYNA);
         uint256[] memory amounts = swapRouter.getAmountsOut(
             totalTokenStack,
             path
         );
-        return amounts[2];
+        return amounts[1];
     }
 }

@@ -282,10 +282,9 @@ contract DyBEP20Venus is DyERC20 {
         uint256 xvsBalance = xvsToken.balanceOf(address(this));
         if (xvsBalance > 0) {
             xvsToken.approve(address(pancakeRouter), xvsBalance);
-            address[] memory path = new address[](3);
+            address[] memory path = new address[](2);
             path[0] = address(xvsToken);
-            path[1] = address(WBNB);
-            path[2] = address(DYNA);
+            path[1] = address(DYNA);
             uint256 _deadline = block.timestamp + 3000;
             pancakeRouter.swapExactTokensForTokens(
                 xvsBalance,
@@ -349,15 +348,14 @@ contract DyBEP20Venus is DyERC20 {
         if (xvsRewards == 0) {
             return 0;
         }
-        address[] memory path = new address[](3);
+        address[] memory path = new address[](2);
         path[0] = address(xvsToken);
-        path[1] = address(WBNB);
-        path[2] = address(DYNA);
+        path[1] = address(DYNA);
         uint256[] memory amounts = pancakeRouter.getAmountsOut(
             xvsRewards,
             path
         );
-        return amounts[2];
+        return amounts[1];
     }
 
     function _distributeDynaByAmount(uint256 _dynaAmount) internal {
@@ -398,15 +396,17 @@ contract DyBEP20Venus is DyERC20 {
         return percent;
     }
 
-    function _getVaultValueInDollar() internal view returns (uint256) {
-        address[] memory path = new address[](3);
+    function _getVaultValueInDollar() public view returns (uint256) {
+        if (totalTokenStack == 0) {
+            return 0;
+        }
+        address[] memory path = new address[](2);
         path[0] = address(xvsToken);
-        path[1] = address(WBNB);
-        path[2] = address(USD);
+        path[1] = address(USD);
         uint256[] memory amounts = pancakeRouter.getAmountsOut(
             totalTokenStack,
             path
         );
-        return amounts[2];
+        return amounts[1];
     }
 }
