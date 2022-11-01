@@ -7,9 +7,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Staking2 {
     using SafeMath for uint256;
-    uint256 public apr = 1000;
+    uint256 public apy = 1000;
     uint256 constant RATE_PRECISION = 10000;
     uint256 constant ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
+    uint256 constant ONE_DAY_IN_SECONDS = 24 * 60 * 60;
     IERC20 public token;
 
     constructor(IERC20 _token) {
@@ -27,6 +28,29 @@ contract Staking2 {
 
     mapping(address => StakeDetail) public stakers;
 
+    function getStakeDetail(address _staker)
+        public
+        view
+        returns (
+            uint256 principal,
+            uint256 interestRate,
+            uint256 lastStakeAt,
+            uint256 lastCompoundAt,
+            uint256 claimedAmount,
+            uint256 firstStakeAt
+        )
+    {
+        StakeDetail memory stakeDetail = stakers[_staker];
+        return (
+            stakeDetail.principal,
+            stakeDetail.interestRate,
+            stakeDetail.lastStakeAt,
+            stakeDetail.lastCompoundAt,
+            stakeDetail.claimedAmount,
+            stakeDetail.firstStakeAt
+        );
+    }
+
     function deposit(uint256 _stakeAmount) external {
         require(
             _stakeAmount > 0,
@@ -42,47 +66,30 @@ contract Staking2 {
                 : stakeDetail.firstStakeAt;
         } else {
             stakeDetail.lastStakeAt = block.timestamp;
-            /// interest
-            uint256 interest = stakeDetail
-                .principal
-                .mul(apr)
-                .mul(block.timestamp.sub(stakeDetail.lastCompoundAt))
-                .div(RATE_PRECISION)
-                .div(ONE_YEAR_IN_SECONDS);
-            stakeDetail.principal = stakeDetail.principal.add(
-                interest.add(_stakeAmount)
-            );
+            stakeDetail.principal = stakeDetail.principal.add(_stakeAmount);
         }
     }
 
     function redeem(uint256 _redeemAmount) external {
         StakeDetail storage stakeDetail = stakers[msg.sender];
         require(stakeDetail.firstStakeAt > 0, "Staking2: no stake");
+        uint256 periods = block.timestamp.sub(stakeDetail.lastCompoundAt).div(
+            ONE_DAY_IN_SECONDS
+        );
+        uint256 interest = 0;
+        for (uint256 i = 0; i < periods; i++) {
+            interest = interest.add(
+                stakeDetail.principal.mul(apy).div(RATE_PRECISION)
+            );
+        }
+        stakeDetail.principal = stakeDetail.principal.add(interest);
+        stakeDetail.lastCompoundAt = block.timestamp;
         require(
             stakeDetail.principal >= _redeemAmount,
             "Staking2: redeem amount must be less than principal"
         );
         stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount);
         token.transfer(msg.sender, _redeemAmount);
-        uint256 interest = stakeDetail
-            .principal
-            .mul(apr)
-            .mul(block.timestamp.sub(stakeDetail.lastCompoundAt))
-            .div(RATE_PRECISION)
-            .div(ONE_YEAR_IN_SECONDS);
-        stakeDetail.principal = stakeDetail.principal.add(interest);
-    }
-
-    function compound() external {
-        StakeDetail storage stakeDetail = stakers[msg.sender];
-        require(stakeDetail.firstStakeAt > 0, "Staking2: no stake");
-        uint256 interest = stakeDetail
-            .principal
-            .mul(apr)
-            .mul(block.timestamp.sub(stakeDetail.lastCompoundAt))
-            .div(RATE_PRECISION)
-            .div(ONE_YEAR_IN_SECONDS);
-        stakeDetail.principal = stakeDetail.principal.add(interest);
         stakeDetail.lastCompoundAt = block.timestamp;
     }
 }
