@@ -40,7 +40,7 @@ abstract contract DyERC20 is DyToken {
         underlying = IERC20(underlying_);
     }
 
-    function deposit(uint256 amountUnderlying_) external {
+    function deposit(uint256 amountUnderlying_) public virtual {
         DepositStruct storage user = userInfo[_msgSender()];
         if (!user.enable) {
             depositors.push(_msgSender());
@@ -54,7 +54,7 @@ abstract contract DyERC20 is DyToken {
         _deposit(amountUnderlying_);
     }
 
-    function withdraw(uint256 amount_) external {
+    function withdraw(uint256 amount_) public virtual {
         DepositStruct storage user = userInfo[_msgSender()];
         require(user.enable, "DyToken:: Need to initial account");
         require(user.amount >= amount_, "DyToken:: Not enough balance");

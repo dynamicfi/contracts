@@ -32,6 +32,9 @@ contract DyERC20Compound is DyERC20 {
         uint256 minMinting;
     }
 
+    event TrackingDeposit(uint256 amount, uint256 usdt);
+    event TrackingWithdraw(uint256 amount, uint256 usdt);
+
     ICompoundERC20Delegator public tokenDelegator;
     ICompoundUnitroller public rewardController;
     IERC20 public compToken;
@@ -70,6 +73,16 @@ contract DyERC20Compound is DyERC20 {
         );
         _enterMarket();
         updateDepositsEnabled(true);
+    }
+
+    function deposit(uint256 amountUnderlying_) public override(DyERC20) {
+        super.deposit(amountUnderlying_);
+        emit TrackingDeposit(amountUnderlying_, _getVaultValueInDollar());
+    }
+
+    function withdraw(uint256 amount_) public override(DyERC20) {
+        super.withdraw(amount_);
+        emit TrackingWithdraw(amount_, _getVaultValueInDollar());
     }
 
     function totalDeposits() public view virtual override returns (uint256) {
@@ -269,10 +282,9 @@ contract DyERC20Compound is DyERC20 {
         uint256 compBalance = compToken.balanceOf(address(this));
         if (compBalance > 0) {
             compToken.approve(address(swapRouter), compBalance);
-            address[] memory path = new address[](3);
+            address[] memory path = new address[](2);
             path[0] = address(compToken);
-            path[1] = address(WETH);
-            path[2] = address(DYNA);
+            path[1] = address(DYNA);
             uint256 _deadline = block.timestamp + 3000;
             swapRouter.swapExactTokensForTokens(
                 compBalance,
@@ -336,12 +348,11 @@ contract DyERC20Compound is DyERC20 {
         if (compRewards == 0) {
             return 0;
         }
-        address[] memory path = new address[](3);
+        address[] memory path = new address[](2);
         path[0] = address(compToken);
-        path[1] = address(WETH);
-        path[2] = address(DYNA);
+        path[1] = address(DYNA);
         uint256[] memory amounts = swapRouter.getAmountsOut(compRewards, path);
-        return amounts[2];
+        return amounts[1];
     }
 
     function _distributeDynaByAmount(uint256 _dynaAmount) internal {
@@ -368,7 +379,7 @@ contract DyERC20Compound is DyERC20 {
         return total;
     }
 
-    function _getAPYValue() internal view returns (uint256) {
+    function _getAPYValue() public view returns (uint256) {
         uint256 totalValue = _getVaultValueInDollar();
         uint256 percent = 0;
 
@@ -383,14 +394,16 @@ contract DyERC20Compound is DyERC20 {
     }
 
     function _getVaultValueInDollar() internal view returns (uint256) {
-        address[] memory path = new address[](3);
+        if (totalTokenStack == 0) {
+            return 0;
+        }
+        address[] memory path = new address[](2);
         path[0] = address(compToken);
-        path[1] = address(WETH);
-        path[2] = address(DYNA);
+        path[1] = address(DYNA);
         uint256[] memory amounts = swapRouter.getAmountsOut(
             totalTokenStack,
             path
         );
-        return amounts[2];
+        return amounts[1];
     }
 }
