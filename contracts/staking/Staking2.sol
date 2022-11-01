@@ -51,6 +51,20 @@ contract Staking2 {
         );
     }
 
+    function getInterest(address _staker) public view returns (uint256) {
+        StakeDetail memory stakeDetail = stakers[_staker];
+        uint256 interest = 0;
+        uint256 periods = block.timestamp.sub(stakeDetail.lastStakeAt).div(
+            ONE_DAY_IN_SECONDS
+        );
+        for (uint256 i = 0; i < periods; i++) {
+            interest = interest.add(
+                stakeDetail.principal.mul(apy).div(RATE_PRECISION)
+            );
+        }
+        return interest;
+    }
+
     function deposit(uint256 _stakeAmount) external {
         require(
             _stakeAmount > 0,
@@ -67,13 +81,24 @@ contract Staking2 {
         } else {
             stakeDetail.lastStakeAt = block.timestamp;
             stakeDetail.principal = stakeDetail.principal.add(_stakeAmount);
+            uint256 interest = 0;
+            uint256 periods = block.timestamp.sub(stakeDetail.lastStakeAt).div(
+                ONE_DAY_IN_SECONDS
+            );
+            for (uint256 i = 0; i < periods; i++) {
+                interest = interest.add(
+                    stakeDetail.principal.mul(apy).div(RATE_PRECISION)
+                );
+            }
+            stakeDetail.principal = stakeDetail.principal.add(interest);
+            stakeDetail.lastStakeAt = block.timestamp;
         }
     }
 
     function redeem(uint256 _redeemAmount) external {
         StakeDetail storage stakeDetail = stakers[msg.sender];
         require(stakeDetail.firstStakeAt > 0, "Staking2: no stake");
-        uint256 periods = block.timestamp.sub(stakeDetail.lastCompoundAt).div(
+        uint256 periods = block.timestamp.sub(stakeDetail.lastStakeAt).div(
             ONE_DAY_IN_SECONDS
         );
         uint256 interest = 0;
@@ -83,13 +108,12 @@ contract Staking2 {
             );
         }
         stakeDetail.principal = stakeDetail.principal.add(interest);
-        stakeDetail.lastCompoundAt = block.timestamp;
+        stakeDetail.lastStakeAt = block.timestamp;
         require(
             stakeDetail.principal >= _redeemAmount,
             "Staking2: redeem amount must be less than principal"
         );
         stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount);
         token.transfer(msg.sender, _redeemAmount);
-        stakeDetail.lastCompoundAt = block.timestamp;
     }
 }
