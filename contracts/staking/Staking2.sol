@@ -12,7 +12,7 @@ contract Staking2 is Ownable{
     uint256 constant ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
     uint256 constant ONE_DAY_IN_SECONDS = 24 * 60 * 60;
 
-    uint256 constant PERIOD_PRECSION = 10000;
+    uint256 constant PERIOD_PRECISION = 10000;
     IERC20 public token;
 
     event Deposit(address indexed user, uint256 amount);
@@ -61,12 +61,12 @@ contract Staking2 is Ownable{
         uint256 periods = block
             .timestamp
             .sub(stakeDetail.lastStakeAt)
-            .mul(PERIOD_PRECSION)
+            .mul(PERIOD_PRECISION)
             .div(ONE_DAY_IN_SECONDS);
         for (uint256 i = 0; i < periods; i++) {
             interest = interest.add(
                 stakeDetail.principal.mul(apy).div(RATE_PRECISION).div(
-                    PERIOD_PRECSION
+                    PERIOD_PRECISION
                 )
             );
         }
@@ -92,13 +92,13 @@ contract Staking2 is Ownable{
             uint256 periods = block
                 .timestamp
                 .sub(stakeDetail.lastStakeAt)
-                .mul(PERIOD_PRECSION)
+                .mul(PERIOD_PRECISION)
                 .div(ONE_DAY_IN_SECONDS);
             uint256 interest = 0;
             for (uint256 i = 0; i < periods; i++) {
                 interest = interest.add(
                     stakeDetail.principal.mul(apy).div(RATE_PRECISION).div(
-                        PERIOD_PRECSION
+                        PERIOD_PRECISION
                     )
                 );
             }
@@ -115,13 +115,13 @@ contract Staking2 is Ownable{
         uint256 periods = block
             .timestamp
             .sub(stakeDetail.lastStakeAt)
-            .mul(PERIOD_PRECSION)
+            .mul(PERIOD_PRECISION)
             .div(ONE_DAY_IN_SECONDS);
         uint256 interest = 0;
         for (uint256 i = 0; i < periods; i++) {
             interest = interest.add(
                 stakeDetail.principal.mul(apy).div(RATE_PRECISION).div(
-                    PERIOD_PRECSION
+                    PERIOD_PRECISION
                 )
             );
         }
