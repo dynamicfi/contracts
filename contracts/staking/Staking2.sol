@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Staking2 {
+contract Staking2 is Ownable{
     using SafeMath for uint256;
     uint256 public apy = 1000;
     uint256 constant RATE_PRECISION = 10000;
@@ -14,6 +14,9 @@ contract Staking2 {
 
     uint256 constant PERIOD_PRECSION = 10000;
     IERC20 public token;
+
+    event Deposit(address indexed user, uint256 amount);
+    event Redeem(address indexed user, uint256 amount);
 
     constructor(IERC20 _token) {
         token = _token;
@@ -26,6 +29,14 @@ contract Staking2 {
     }
 
     mapping(address => StakeDetail) public stakers;
+
+    function updateAPY(uint256 _apy) external onlyOwner {
+        apy = _apy;
+    }
+
+    function emergencyWithdraw(uint256 _amount) external onlyOwner {
+        token.transfer(msg.sender, _amount);
+    }
 
     function getStakeDetail(address _staker)
         public
@@ -94,6 +105,8 @@ contract Staking2 {
             stakeDetail.principal = stakeDetail.principal.add(interest);
             stakeDetail.lastStakeAt = block.timestamp;
         }
+
+        emit Deposit(msg.sender, _stakeAmount);
     }
 
     function redeem(uint256 _redeemAmount) external {
@@ -119,6 +132,10 @@ contract Staking2 {
             "Staking2: redeem amount must be less than principal"
         );
         stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount);
-        token.transfer(msg.sender, _redeemAmount);
+        require(
+            token.transfer(msg.sender, _redeemAmount),
+            "Staking2: transfer failed"
+        );
+        emit Redeem(msg.sender, _redeemAmount);
     }
 }
