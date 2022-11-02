@@ -21,10 +21,7 @@ contract Staking2 {
 
     struct StakeDetail {
         uint256 principal;
-        uint256 interestRate;
         uint256 lastStakeAt;
-        uint256 lastCompoundAt;
-        uint256 claimedAmount;
         uint256 firstStakeAt;
     }
 
@@ -35,20 +32,14 @@ contract Staking2 {
         view
         returns (
             uint256 principal,
-            uint256 interestRate,
             uint256 lastStakeAt,
-            uint256 lastCompoundAt,
-            uint256 claimedAmount,
             uint256 firstStakeAt
         )
     {
         StakeDetail memory stakeDetail = stakers[_staker];
         return (
             stakeDetail.principal,
-            stakeDetail.interestRate,
             stakeDetail.lastStakeAt,
-            stakeDetail.lastCompoundAt,
-            stakeDetail.claimedAmount,
             stakeDetail.firstStakeAt
         );
     }
