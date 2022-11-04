@@ -34,6 +34,7 @@ contract DyBEP20Venus is DyERC20 {
 
     event TrackingDeposit(uint256 amount, uint256 usdt);
     event TrackingWithdraw(uint256 amount, uint256 usdt);
+    event TrackingInterest(uint256 moment, uint256 amount);
 
     IVenusBEP20Delegator public tokenDelegator;
     IVenusUnitroller public rewardController;
@@ -44,6 +45,7 @@ contract DyBEP20Venus is DyERC20 {
     uint256 public leverageBips;
     uint256 public minMinting;
     uint256 public redeemLimitSafetyMargin;
+    uint256 public totalInterest;
 
     constructor(
         address underlying_,
@@ -277,6 +279,7 @@ contract DyBEP20Venus is DyERC20 {
         address[] memory markets = new address[](1);
         markets[0] = address(tokenDelegator);
         uint256 dynaReward = distributeReward();
+        totalInterest += dynaReward;
         rewardController.claimVenus(address(this), markets);
 
         uint256 xvsBalance = xvsToken.balanceOf(address(this));
@@ -306,6 +309,7 @@ contract DyBEP20Venus is DyERC20 {
         }
 
         emit Reinvest(totalDeposits(), totalSupply());
+        emit TrackingInterest(block.timestamp, dynaReward);
     }
 
     function getActualLeverage() public view returns (uint256) {

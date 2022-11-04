@@ -24,7 +24,7 @@ async function main() {
     "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", // WETH
     "0x7783c490B6D12E719A4271661D6Eb03539eB9BC9", // dyna
     "0x79C950C7446B234a6Ad53B908fBF342b01c4d446", // USD
-    "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45", // Uniswap Router
+    "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D", // Uniswap Router
     {
       leverageLevel: 15000,
       leverageBips: 10000,

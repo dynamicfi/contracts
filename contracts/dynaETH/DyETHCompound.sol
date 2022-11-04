@@ -36,6 +36,7 @@ contract DyETHCompound is DyETH {
 
     event TrackingDeposit(uint256 amount, uint256 usdt);
     event TrackingWithdraw(uint256 amount, uint256 usdt);
+    event TrackingInterest(uint256 moment, uint256 amount);
 
     ICompoundETHDelegator public tokenDelegator;
     ICompoundUnitroller public rewardController;
@@ -46,6 +47,7 @@ contract DyETHCompound is DyETH {
     uint256 public leverageBips;
     uint256 public minMinting;
     uint256 public redeemLimitSafetyMargin;
+    uint256 public totalInterest;
 
     constructor(
         string memory name_,
@@ -281,6 +283,7 @@ contract DyETHCompound is DyETH {
         address[] memory markets = new address[](1);
         markets[0] = address(tokenDelegator);
         uint256 dynaReward = distributeReward();
+        totalInterest += dynaReward;
         rewardController.claimComp(address(this), markets);
 
         uint256 compBalance = compToken.balanceOf(address(this));
@@ -311,6 +314,7 @@ contract DyETHCompound is DyETH {
         }
 
         emit Reinvest(totalDeposits(), totalSupply());
+        emit TrackingInterest(block.timestamp, dynaReward);
     }
 
     function rescueDeployedFunds(uint256 minReturnAmountAccepted)

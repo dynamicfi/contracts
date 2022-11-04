@@ -17,10 +17,9 @@ async function main() {
   // We get the contract to deploy
   const CrossChain = await hre.ethers.getContractFactory("CrossChain");
   const crossChain = await CrossChain.deploy(
-    process.env.CBRIDGE_ROUTER,
-    process.env.FEE,
-    process.env.UNISWAP_V2_ROUTER,
-    process.env.WETH,
+    "10000000000000000",
+    "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+    "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6"
   );
   // hre.ethers.
   await crossChain.deployed();
