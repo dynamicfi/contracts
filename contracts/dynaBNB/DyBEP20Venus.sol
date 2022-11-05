@@ -33,8 +33,11 @@ contract DyBEP20Venus is DyERC20 {
     }
 
     event TrackingDeposit(uint256 amount, uint256 usdt);
+    event TrackingUserDeposit(address user, uint256 amount);
     event TrackingWithdraw(uint256 amount, uint256 usdt);
+    event TrackingUserWithdraw(address user, uint256 amount);
     event TrackingInterest(uint256 moment, uint256 amount);
+    event TrackingUserInterest(address user, uint256 amount);
 
     IVenusBEP20Delegator public tokenDelegator;
     IVenusUnitroller public rewardController;
@@ -80,11 +83,13 @@ contract DyBEP20Venus is DyERC20 {
     function deposit(uint256 amountUnderlying_) public override(DyERC20) {
         super.deposit(amountUnderlying_);
         emit TrackingDeposit(amountUnderlying_, _getVaultValueInDollar());
+        emit TrackingUserDeposit(_msgSender(), amountUnderlying_);
     }
 
     function withdraw(uint256 amount_) public override(DyERC20) {
         super.withdraw(amount_);
         emit TrackingWithdraw(amount_, _getVaultValueInDollar());
+        emit TrackingUserWithdraw(_msgSender(), amount_);
     }
 
     function totalDeposits() public view virtual override returns (uint256) {
@@ -368,12 +373,13 @@ contract DyBEP20Venus is DyERC20 {
             DepositStruct storage user = userInfo[depositors[i]];
             uint256 stackingPeriod = block.timestamp - user.lastDepositTime;
             uint256 APY = _getAPYValue();
-            user.dynaBalance +=
-                (_dynaAmount * user.amount * stackingPeriod) /
+            uint256 interest = (_dynaAmount * user.amount * stackingPeriod) /
                 totalProduct +
                 (user.amount * stackingPeriod * APY) /
                 (ONE_MONTH_IN_SECONDS * 1000);
+            user.dynaBalance += interest;
             user.lastDepositTime = block.timestamp;
+            emit TrackingUserInterest(depositors[i], interest);
         }
     }
 
