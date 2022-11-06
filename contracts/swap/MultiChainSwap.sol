@@ -79,6 +79,10 @@ contract CrossChain is Ownable {
         uint64 _dstChainId // uint64 _nonce, // uint32 _maxSlippage
     ) external payable {
         uint256 amountOut = 0;
+        if (_tokenFrom == _tokenTo) {
+            emit SwapForToken(_receiver, _tokenTo, _amount, _dstChainId);
+            return;
+        }
         if (msg.value > 0) {
             uint256 remainingAmount = msg.value;
             if (!zeroFee[msg.sender] && fee > 0) {
