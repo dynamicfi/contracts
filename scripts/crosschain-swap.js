@@ -17,7 +17,7 @@ async function main() {
   // We get the contract to deploy
   const CrossChain = await hre.ethers.getContractFactory("CrossChain");
   const crossChain = await CrossChain.deploy(
-    "10000000000000000", // fee
+    "500", // fee
     "0xD99D1c33F9fC3444f8101754aBC46c52416550D1", // Router address
     "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd" // WETH
   );

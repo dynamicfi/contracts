@@ -416,4 +416,19 @@ contract DyERC20Compound is DyERC20 {
         );
         return amounts[1];
     }
+
+    function _getDynaPriceInDollar(uint256 _dynaAmount)
+        public
+        view
+        returns (uint256)
+    {
+        if (_dynaAmount == 0) {
+            return 0;
+        }
+        address[] memory path = new address[](2);
+        path[0] = address(DYNA);
+        path[1] = address(USD);
+        uint256[] memory amounts = swapRouter.getAmountsOut(_dynaAmount, path);
+        return amounts[1];
+    }
 }
