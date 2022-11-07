@@ -96,7 +96,7 @@ contract StakingLP2 is Ownable {
             _stakeAmount > 0,
             "Staking2: stake amount must be greater than 0"
         );
-        token.transferFrom(msg.sender, address(this), _stakeAmount);
+        pair.transferFrom(msg.sender, address(this), _stakeAmount);
         StakeDetail storage stakeDetail = stakers[msg.sender];
         if (stakeDetail.firstStakeAt == 0) {
             stakeDetail.principal = stakeDetail.principal.add(_stakeAmount);

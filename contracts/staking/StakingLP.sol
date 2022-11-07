@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IPancakePair.sol";
 import "./interfaces/IPancakeRouter.sol";
 
-contract StakingLP2 is Ownable {
+contract StakingLP is Ownable {
     using SafeMath for uint256;
     using SafeMath for uint112;
     using Counters for Counters.Counter;
