@@ -15,6 +15,8 @@ contract Staking2 is Ownable {
     uint256 constant PERIOD_PRECISION = 10000;
     IERC20 public token;
 
+    bool public enabled;
+
     event Deposit(address indexed user, uint256 amount);
     event Redeem(address indexed user, uint256 amount);
 
@@ -29,6 +31,10 @@ contract Staking2 is Ownable {
     }
 
     mapping(address => StakeDetail) public stakers;
+
+    function setEnabled(bool _enabled) external onlyOwner {
+        enabled = _enabled;
+    }
 
     function updateAPR(uint256 _apr) external onlyOwner {
         apr = _apr;
@@ -68,6 +74,7 @@ contract Staking2 is Ownable {
     }
 
     function deposit(uint256 _stakeAmount) external {
+        require(enabled, "Staking is not enabled");
         require(
             _stakeAmount > 0,
             "Staking2: stake amount must be greater than 0"
@@ -92,6 +99,7 @@ contract Staking2 is Ownable {
     }
 
     function redeem(uint256 _redeemAmount) external {
+        require(enabled, "Staking is not enabled");
         StakeDetail storage stakeDetail = stakers[msg.sender];
         require(stakeDetail.firstStakeAt > 0, "Staking2: no stake");
 

@@ -11,7 +11,7 @@ contract StakingLP2 is Ownable {
     using SafeMath for uint256;
     using SafeMath for uint112;
 
-    uint256 public apy = 1000;
+    uint256 public apr = 1000;
     uint256 constant RATE_PRECISION = 10000;
     uint256 constant ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
     uint256 constant ONE_DAY_IN_SECONDS = 24 * 60 * 60;
@@ -39,7 +39,7 @@ contract StakingLP2 is Ownable {
 
     struct StakeDetail {
         uint256 principal;
-        uint256 lastStakeAt;
+        uint256 lastProcessAt;
         uint256 firstStakeAt;
     }
 
@@ -47,10 +47,6 @@ contract StakingLP2 is Ownable {
 
     function setEnabled(bool _enabled) external onlyOwner {
         enabled = _enabled;
-    }
-
-    function updateAPY(uint256 _apy) external onlyOwner {
-        apy = _apy;
     }
 
     function emergencyWithdraw(uint256 _amount) external onlyOwner {
@@ -62,34 +58,36 @@ contract StakingLP2 is Ownable {
         view
         returns (
             uint256 principal,
-            uint256 lastStakeAt,
+            uint256 lastProcessAt,
             uint256 firstStakeAt
         )
     {
         StakeDetail memory stakeDetail = stakers[_staker];
         return (
             stakeDetail.principal,
-            stakeDetail.lastStakeAt,
+            stakeDetail.lastProcessAt,
             stakeDetail.firstStakeAt
         );
     }
 
     function getInterest(address _staker) public view returns (uint256) {
         StakeDetail memory stakeDetail = stakers[_staker];
-        uint256 interest = 0;
-        uint256 periods = block
-            .timestamp
-            .sub(stakeDetail.lastStakeAt)
-            .mul(PERIOD_PRECISION)
-            .div(ONE_DAY_IN_SECONDS);
-        for (uint256 i = 0; i < periods; i++) {
-            interest = interest.add(
-                stakeDetail.principal.mul(apy).div(RATE_PRECISION).div(
-                    PERIOD_PRECISION
-                )
-            );
-        }
-        return interest.mul(getPairPrice()).div(1e18);
+        uint256 duration = block.timestamp.sub(stakeDetail.lastProcessAt);
+        uint256 interest = stakeDetail
+            .principal
+            .mul(apr)
+            .mul(duration)
+            .div(ONE_YEAR_IN_SECONDS)
+            .div(RATE_PRECISION);
+        return interest;
+    }
+
+    function getTokenRewardInterest(address _staker)
+        external
+        view
+        returns (uint256)
+    {
+        return getInterest(_staker).mul(getPairPrice()).div(1e18);
     }
 
     function deposit(uint256 _stakeAmount) external {
@@ -98,33 +96,21 @@ contract StakingLP2 is Ownable {
             _stakeAmount > 0,
             "Staking2: stake amount must be greater than 0"
         );
-        pair.transferFrom(msg.sender, address(this), _stakeAmount);
+        token.transferFrom(msg.sender, address(this), _stakeAmount);
         StakeDetail storage stakeDetail = stakers[msg.sender];
         if (stakeDetail.firstStakeAt == 0) {
             stakeDetail.principal = stakeDetail.principal.add(_stakeAmount);
-            stakeDetail.lastStakeAt = block.timestamp;
             stakeDetail.firstStakeAt = stakeDetail.firstStakeAt == 0
                 ? block.timestamp
                 : stakeDetail.firstStakeAt;
         } else {
-            stakeDetail.lastStakeAt = block.timestamp;
-            stakeDetail.principal = stakeDetail.principal.add(_stakeAmount);
-            uint256 periods = block
-                .timestamp
-                .sub(stakeDetail.lastStakeAt)
-                .mul(PERIOD_PRECISION)
-                .div(ONE_DAY_IN_SECONDS);
-            uint256 interest = 0;
-            for (uint256 i = 0; i < periods; i++) {
-                interest = interest.add(
-                    stakeDetail.principal.mul(apy).div(RATE_PRECISION).div(
-                        PERIOD_PRECISION
-                    )
-                );
-            }
-            stakeDetail.principal = stakeDetail.principal.add(interest);
-            stakeDetail.lastStakeAt = block.timestamp;
+            uint256 interest = getInterest(msg.sender);
+
+            stakeDetail.principal = stakeDetail.principal.add(interest).add(
+                _stakeAmount
+            );
         }
+        stakeDetail.lastProcessAt = block.timestamp;
 
         emit Deposit(msg.sender, _stakeAmount);
     }
@@ -149,17 +135,29 @@ contract StakingLP2 is Ownable {
         require(enabled, "Staking is not enabled");
         StakeDetail storage stakeDetail = stakers[msg.sender];
         require(stakeDetail.firstStakeAt > 0, "Staking2: no stake");
-        uint256 currentInterest = getInterest(msg.sender);
-        stakeDetail.principal = stakeDetail.principal.add(currentInterest);
-        stakeDetail.lastStakeAt = block.timestamp;
+        uint256 interest = getInterest(msg.sender);
+        uint256 claimAmount = interest.mul(_redeemAmount).div(
+            stakeDetail.principal
+        );
+        uint256 claimAmountInToken = claimAmount.mul(getPairPrice()).div(1e18);
+
+        uint256 remainAmount = interest.sub(claimAmount);
+
+        stakeDetail.lastProcessAt = block.timestamp;
         require(
             stakeDetail.principal >= _redeemAmount,
             "Staking2: redeem amount must be less than principal"
         );
-        stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount);
+        stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount).add(
+            remainAmount
+        );
         require(
             pair.transfer(msg.sender, _redeemAmount),
             "Staking2: transfer failed"
+        );
+        require(
+            token.transfer(msg.sender, claimAmountInToken),
+            "Staking2: reward transfer failed"
         );
         emit Redeem(msg.sender, _redeemAmount);
     }
