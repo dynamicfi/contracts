@@ -4,24 +4,40 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/IPancakePair.sol";
+import "./interfaces/IPancakeRouter.sol";
 
-contract Staking2 is Ownable {
+contract StakingLP3 is Ownable {
     using SafeMath for uint256;
-    uint256 public apr = 3200;
+    using SafeMath for uint112;
+
+    uint256 public apr = 6400;
     uint256 constant RATE_PRECISION = 10000;
     uint256 constant ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
     uint256 constant ONE_DAY_IN_SECONDS = 24 * 60 * 60;
 
     uint256 constant PERIOD_PRECISION = 10000;
     IERC20 public token;
+    IERC20 public token2;
+    IPancakeRouter public router;
+    IPancakePair public pair;
 
     bool public enabled;
 
     event Deposit(address indexed user, uint256 amount);
     event Redeem(address indexed user, uint256 amount);
 
-    constructor(IERC20 _token) {
-        token = _token;
+    constructor(
+        address _pair,
+        address _router,
+        address _token2,
+        address _token
+    ) {
+        pair = IPancakePair(_pair);
+        router = IPancakeRouter(_router);
+        token2 = IERC20(_token2);
+        token = IERC20(_token);
+        enabled = false;
     }
 
     struct StakeDetail {
@@ -73,13 +89,21 @@ contract Staking2 is Ownable {
         return interest;
     }
 
+    function getTokenRewardInterest(address _staker)
+        external
+        view
+        returns (uint256)
+    {
+        return getInterest(_staker).mul(getPairPrice()).div(1e18);
+    }
+
     function deposit(uint256 _stakeAmount) external {
         require(enabled, "Staking is not enabled");
         require(
             _stakeAmount > 0,
-            "Staking2: stake amount must be greater than 0"
+            "Staking3: stake amount must be greater than 0"
         );
-        token.transferFrom(msg.sender, address(this), _stakeAmount);
+        pair.transferFrom(msg.sender, address(this), _stakeAmount);
         StakeDetail storage stakeDetail = stakers[msg.sender];
         if (stakeDetail.firstStakeAt == 0) {
             stakeDetail.principal = stakeDetail.principal.add(_stakeAmount);
@@ -98,31 +122,49 @@ contract Staking2 is Ownable {
         emit Deposit(msg.sender, _stakeAmount);
     }
 
+    function getPairPrice() public view returns (uint256) {
+        uint112 reserve0;
+        uint112 reserve1;
+        (reserve0, reserve1, ) = pair.getReserves();
+
+        uint256 totalPoolValue = reserve1.mul(2);
+        uint256 mintedPair = pair.totalSupply();
+        uint256 pairPriceInDAI = totalPoolValue.mul(1e18).div(mintedPair);
+        address[] memory path = new address[](2);
+        path[0] = address(token2);
+        path[1] = address(token);
+        uint256[] memory amounts = router.getAmountsOut(pairPriceInDAI, path);
+        return amounts[1];
+    }
+
     function redeem(uint256 _redeemAmount) external {
         require(enabled, "Staking is not enabled");
         StakeDetail storage stakeDetail = stakers[msg.sender];
-        require(stakeDetail.firstStakeAt > 0, "Staking2: no stake");
-
+        require(stakeDetail.firstStakeAt > 0, "Staking3: no stake");
         uint256 interest = getInterest(msg.sender);
-
         uint256 claimAmount = interest.mul(_redeemAmount).div(
             stakeDetail.principal
         );
+        uint256 claimAmountInToken = claimAmount.mul(getPairPrice()).div(1e18);
 
         uint256 remainAmount = interest.sub(claimAmount);
 
         stakeDetail.lastProcessAt = block.timestamp;
         require(
             stakeDetail.principal >= _redeemAmount,
-            "Staking2: redeem amount must be less than principal"
+            "Staking3: redeem amount must be less than principal"
         );
         stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount).add(
             remainAmount
         );
         require(
-            token.transfer(msg.sender, _redeemAmount.add(claimAmount)),
-            "Staking2: transfer failed"
+            pair.transfer(msg.sender, _redeemAmount),
+            "Staking3: transfer failed"
         );
-        emit Redeem(msg.sender, _redeemAmount.add(claimAmount));
+        require(
+            token.transfer(msg.sender, claimAmountInToken),
+            "Staking3: reward transfer failed"
+        );
+        emit Redeem(msg.sender, _redeemAmount);
     }
 }

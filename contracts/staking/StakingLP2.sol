@@ -11,13 +11,14 @@ contract StakingLP2 is Ownable {
     using SafeMath for uint256;
     using SafeMath for uint112;
 
-    uint256 public apr = 1000;
+    uint256 public apr = 4800;
     uint256 constant RATE_PRECISION = 10000;
     uint256 constant ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
     uint256 constant ONE_DAY_IN_SECONDS = 24 * 60 * 60;
 
     uint256 constant PERIOD_PRECISION = 10000;
     IERC20 public token;
+    IERC20 public dai;
     IPancakeRouter public router;
     IPancakePair public pair;
 
@@ -47,6 +48,10 @@ contract StakingLP2 is Ownable {
 
     function setEnabled(bool _enabled) external onlyOwner {
         enabled = _enabled;
+    }
+
+    function updateAPR(uint256 _apr) external onlyOwner {
+        apr = _apr;
     }
 
     function emergencyWithdraw(uint256 _amount) external onlyOwner {
@@ -123,9 +128,9 @@ contract StakingLP2 is Ownable {
         uint256 totalPoolValue = reserve1.mul(2);
         uint256 mintedPair = pair.totalSupply();
         uint256 pairPriceInETH = totalPoolValue.mul(1e18).div(mintedPair);
-        // return pairPriceInETH;
         address[] memory path = new address[](2);
         path[0] = router.WETH();
+        path[1] = daiAddress;
         path[1] = address(token);
         uint256[] memory amounts = router.getAmountsOut(pairPriceInETH, path);
         return amounts[1];
