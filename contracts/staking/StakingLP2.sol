@@ -18,7 +18,6 @@ contract StakingLP2 is Ownable {
 
     uint256 constant PERIOD_PRECISION = 10000;
     IERC20 public token;
-    IERC20 public dai;
     IPancakeRouter public router;
     IPancakePair public pair;
 
@@ -130,7 +129,6 @@ contract StakingLP2 is Ownable {
         uint256 pairPriceInETH = totalPoolValue.mul(1e18).div(mintedPair);
         address[] memory path = new address[](2);
         path[0] = router.WETH();
-        path[1] = daiAddress;
         path[1] = address(token);
         uint256[] memory amounts = router.getAmountsOut(pairPriceInETH, path);
         return amounts[1];
