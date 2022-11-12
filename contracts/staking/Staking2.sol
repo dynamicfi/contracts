@@ -27,6 +27,7 @@ contract Staking2 is Ownable {
     struct StakeDetail {
         uint256 principal;
         uint256 lastProcessAt;
+        uint256 pendingReward;
         uint256 firstStakeAt;
     }
 
@@ -70,7 +71,7 @@ contract Staking2 is Ownable {
             .mul(duration)
             .div(ONE_YEAR_IN_SECONDS)
             .div(RATE_PRECISION);
-        return interest;
+        return interest.add(stakeDetail.pendingReward);
     }
 
     function deposit(uint256 _stakeAmount) external {
@@ -86,14 +87,10 @@ contract Staking2 is Ownable {
             stakeDetail.firstStakeAt = stakeDetail.firstStakeAt == 0
                 ? block.timestamp
                 : stakeDetail.firstStakeAt;
+            stakeDetail.lastProcessAt = block.timestamp;
         } else {
-            uint256 interest = getInterest(msg.sender);
-
-            stakeDetail.principal = stakeDetail.principal.add(interest).add(
-                _stakeAmount
-            );
+            stakeDetail.principal = stakeDetail.principal.add(_stakeAmount);
         }
-        stakeDetail.lastProcessAt = block.timestamp;
 
         emit Deposit(msg.sender, _stakeAmount);
     }
@@ -116,9 +113,8 @@ contract Staking2 is Ownable {
             stakeDetail.principal >= _redeemAmount,
             "Staking2: redeem amount must be less than principal"
         );
-        stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount).add(
-            remainAmount
-        );
+        stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount);
+        stakeDetail.pendingReward = remainAmount;
         require(
             token.transfer(msg.sender, _redeemAmount.add(claimAmount)),
             "Staking2: transfer failed"
