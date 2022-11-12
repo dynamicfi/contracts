@@ -50,6 +50,7 @@ contract Staking2 is Ownable {
         view
         returns (
             uint256 principal,
+            uint256 pendingReward,
             uint256 lastProcessAt,
             uint256 firstStakeAt
         )
@@ -57,6 +58,7 @@ contract Staking2 is Ownable {
         StakeDetail memory stakeDetail = stakers[_staker];
         return (
             stakeDetail.principal,
+            stakeDetail.pendingReward,
             stakeDetail.lastProcessAt,
             stakeDetail.firstStakeAt
         );
