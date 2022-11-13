@@ -43,6 +43,7 @@ contract StakingLP3 is Ownable {
     struct StakeDetail {
         uint256 principal;
         uint256 lastProcessAt;
+        uint256 pendingReward;
         uint256 firstStakeAt;
     }
 
@@ -66,6 +67,7 @@ contract StakingLP3 is Ownable {
         returns (
             uint256 principal,
             uint256 lastProcessAt,
+            uint256 pendingReward,
             uint256 firstStakeAt
         )
     {
@@ -73,6 +75,7 @@ contract StakingLP3 is Ownable {
         return (
             stakeDetail.principal,
             stakeDetail.lastProcessAt,
+            stakeDetail.pendingReward,
             stakeDetail.firstStakeAt
         );
     }
@@ -94,7 +97,10 @@ contract StakingLP3 is Ownable {
         view
         returns (uint256)
     {
-        return getInterest(_staker).mul(getPairPrice()).div(1e18);
+        return
+            getInterest(_staker).mul(getPairPrice()).div(1e18).add(
+                stakers[_staker].pendingReward
+            );
     }
 
     function deposit(uint256 _stakeAmount) external {
@@ -110,14 +116,10 @@ contract StakingLP3 is Ownable {
             stakeDetail.firstStakeAt = stakeDetail.firstStakeAt == 0
                 ? block.timestamp
                 : stakeDetail.firstStakeAt;
+            stakeDetail.lastProcessAt = block.timestamp;
         } else {
-            uint256 interest = getInterest(msg.sender);
-
-            stakeDetail.principal = stakeDetail.principal.add(interest).add(
-                _stakeAmount
-            );
+            stakeDetail.principal = stakeDetail.principal.add(_stakeAmount);
         }
-        stakeDetail.lastProcessAt = block.timestamp;
 
         emit Deposit(msg.sender, _stakeAmount);
     }
@@ -145,7 +147,9 @@ contract StakingLP3 is Ownable {
         uint256 claimAmount = interest.mul(_redeemAmount).div(
             stakeDetail.principal
         );
-        uint256 claimAmountInToken = claimAmount.mul(getPairPrice()).div(1e18);
+        uint256 claimAmountInToken = claimAmount.mul(getPairPrice()).div(1e18).add(
+            stakeDetail.pendingReward
+        );
 
         uint256 remainAmount = interest.sub(claimAmount);
 
@@ -154,9 +158,8 @@ contract StakingLP3 is Ownable {
             stakeDetail.principal >= _redeemAmount,
             "Staking3: redeem amount must be less than principal"
         );
-        stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount).add(
-            remainAmount
-        );
+        stakeDetail.pendingReward = remainAmount;
+        stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount);
         require(
             pair.transfer(msg.sender, _redeemAmount),
             "Staking3: transfer failed"
