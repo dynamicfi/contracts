@@ -147,13 +147,14 @@ contract StakingLP2 is Ownable {
         uint256 claimAmountInToken = claimAmount.mul(getPairPrice()).div(1e18);
 
         uint256 remainAmount = interest.sub(claimAmount);
+        uint256 remainAmountInToken = remainAmount.mul(getPairPrice()).div(1e18);
 
         stakeDetail.lastProcessAt = block.timestamp;
         require(
             stakeDetail.principal >= _redeemAmount,
             "Staking2: redeem amount must be less than principal"
         );
-        stakeDetail.pendingReward = remainAmount;
+        stakeDetail.pendingReward = remainAmountInToken;
         stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount);
         require(
             pair.transfer(msg.sender, _redeemAmount),
