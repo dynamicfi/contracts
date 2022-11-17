@@ -109,7 +109,7 @@ contract CrossChain is Ownable {
             uint256 amountOutMin = (amt[amt.length - 1] *
                 (100 - _percentSlippage)) / 100;
             uint256[] memory amounts = IUniswapV2Router(router)
-                .swapExactETHForTokens{value: amountOutMin}(
+                .swapExactETHForTokens{value: remainingAmount}(
                 amountOutMin,
                 path,
                 address(this),
