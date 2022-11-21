@@ -75,15 +75,26 @@ contract CrossChain is Ownable {
         address _receiver,
         address _tokenFrom,
         address _tokenTo,
-        uint256 _amount,
+        uint256 _amountIn,
+        uint256 _percentSlippage,
         uint64 _dstChainId // uint64 _nonce, // uint32 _maxSlippage
     ) external payable {
         uint256 amountOut = 0;
         if (msg.value > 0) {
+            require(msg.value == _amountIn, "Invalid input");
             uint256 remainingAmount = msg.value;
-            if (!zeroFee[msg.sender] && fee > 0) {
-                uint256 totalFee = (fee * _amount) / divider;
+            if (!zeroFee[msg.sender] && fee > 0 && _dstChainId != 97) {
+                uint256 totalFee = (fee * _amountIn) / divider;
                 remainingAmount = remainingAmount.sub(totalFee);
+            }
+            if (_tokenFrom == _tokenTo) {
+                emit SwapForToken(
+                    _receiver,
+                    _tokenTo,
+                    remainingAmount,
+                    _dstChainId
+                );
+                return;
             }
             appove(router, _tokenFrom, remainingAmount);
             address[] memory path;
@@ -94,27 +105,45 @@ contract CrossChain is Ownable {
                 remainingAmount,
                 path
             );
-            require(amt[2] > 0, "Invalid param");
+            require(amt[amt.length - 1] > 0, "Invalid param");
+            uint256 amountOutMin = (amt[amt.length - 1] *
+                (100 - _percentSlippage)) / 100;
+
+            if (_dstChainId == 97) {
+                IUniswapV2Router(router).swapExactETHForTokens{
+                    value: remainingAmount
+                }(amountOutMin, path, _receiver, block.timestamp + swapTimeout);
+                return;
+            }
             uint256[] memory amounts = IUniswapV2Router(router)
-                .swapETHForExactTokens{value: remainingAmount}(
-                amountOut,
+                .swapExactETHForTokens{value: remainingAmount}(
+                amountOutMin,
                 path,
                 address(this),
                 block.timestamp + swapTimeout
             );
-            amountOut = amounts[2];
+            amountOut = amounts[amounts.length - 1];
         } else {
             bool result = IERC20(_tokenFrom).transferFrom(
                 msg.sender,
                 address(this),
-                _amount
+                _amountIn
             );
             require(result, "token transfer fail");
 
-            uint256 remainingAmount = _amount;
-            if (!zeroFee[msg.sender] && fee > 0) {
-                uint256 totalFee = (fee * _amount) / divider;
+            uint256 remainingAmount = _amountIn;
+            if (!zeroFee[msg.sender] && fee > 0 && _dstChainId != 97) {
+                uint256 totalFee = (fee * _amountIn) / divider;
                 remainingAmount = remainingAmount.sub(totalFee);
+            }
+            if (_tokenFrom == _tokenTo && _dstChainId != 97) {
+                emit SwapForToken(
+                    _receiver,
+                    _tokenTo,
+                    remainingAmount,
+                    _dstChainId
+                );
+                return;
             }
             appove(router, _tokenFrom, remainingAmount);
             if (_tokenFrom != _tokenTo) {
@@ -134,18 +163,28 @@ contract CrossChain is Ownable {
                     remainingAmount,
                     path
                 );
-                require(amt[2] > 0, "Invalid param");
+                require(amt[amt.length - 1] > 0, "Invalid param");
+                uint256 amountOutMin = (amt[amt.length - 1] *
+                    (100 - _percentSlippage)) / 100;
+                if (_dstChainId == 97) {
+                    IUniswapV2Router(router).swapExactTokensForTokens(
+                        remainingAmount,
+                        amountOutMin,
+                        path,
+                        _receiver,
+                        block.timestamp + swapTimeout
+                    );
+                    return;
+                }
                 uint256[] memory amounts = IUniswapV2Router(router)
                     .swapExactTokensForTokens(
                         remainingAmount,
-                        amountOut,
+                        amountOutMin,
                         path,
                         address(this),
                         block.timestamp + swapTimeout
                     );
-                amountOut = amounts[2];
-            } else {
-                amountOut = remainingAmount;
+                amountOut = amounts[amounts.length - 1];
             }
         }
 
@@ -174,5 +213,10 @@ contract CrossChain is Ownable {
 
     function withdraw(address _token, uint256 _amount) public onlyOwner {
         IERC20(_token).transfer(_msgSender(), _amount);
+    }
+
+    function withdrawETH(uint256 _amount) public payable onlyOwner {
+        (bool success, ) = _msgSender().call{value: _amount}("");
+        require(success, "Transfer ETH failed");
     }
 }

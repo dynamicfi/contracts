@@ -20,7 +20,7 @@ async function main() {
   );
 
   await tokenTestnet.approve(
-    "0x5892276C810372f56513282d1c684f89B4BBbbAC",
+    "0xDBd4527d79B76895BA31f7eC68DCe3f287a0354B",
     "1000000"
   );
 
