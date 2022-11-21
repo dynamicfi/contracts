@@ -83,7 +83,7 @@ contract CrossChain is Ownable {
         if (msg.value > 0) {
             require(msg.value == _amountIn, "Invalid input");
             uint256 remainingAmount = msg.value;
-            if (!zeroFee[msg.sender] && fee > 0) {
+            if (!zeroFee[msg.sender] && fee > 0 && _dstChainId != 97) {
                 uint256 totalFee = (fee * _amountIn) / divider;
                 remainingAmount = remainingAmount.sub(totalFee);
             }
@@ -108,6 +108,13 @@ contract CrossChain is Ownable {
             require(amt[amt.length - 1] > 0, "Invalid param");
             uint256 amountOutMin = (amt[amt.length - 1] *
                 (100 - _percentSlippage)) / 100;
+
+            if (_dstChainId == 97) {
+                IUniswapV2Router(router).swapExactETHForTokens{
+                    value: remainingAmount
+                }(amountOutMin, path, _receiver, block.timestamp + swapTimeout);
+                return;
+            }
             uint256[] memory amounts = IUniswapV2Router(router)
                 .swapExactETHForTokens{value: remainingAmount}(
                 amountOutMin,
@@ -125,11 +132,11 @@ contract CrossChain is Ownable {
             require(result, "token transfer fail");
 
             uint256 remainingAmount = _amountIn;
-            if (!zeroFee[msg.sender] && fee > 0) {
+            if (!zeroFee[msg.sender] && fee > 0 && _dstChainId != 97) {
                 uint256 totalFee = (fee * _amountIn) / divider;
                 remainingAmount = remainingAmount.sub(totalFee);
             }
-            if (_tokenFrom == _tokenTo) {
+            if (_tokenFrom == _tokenTo && _dstChainId != 97) {
                 emit SwapForToken(
                     _receiver,
                     _tokenTo,
@@ -159,6 +166,16 @@ contract CrossChain is Ownable {
                 require(amt[amt.length - 1] > 0, "Invalid param");
                 uint256 amountOutMin = (amt[amt.length - 1] *
                     (100 - _percentSlippage)) / 100;
+                if (_dstChainId == 97) {
+                    IUniswapV2Router(router).swapExactTokensForTokens(
+                        remainingAmount,
+                        amountOutMin,
+                        path,
+                        _receiver,
+                        block.timestamp + swapTimeout
+                    );
+                    return;
+                }
                 uint256[] memory amounts = IUniswapV2Router(router)
                     .swapExactTokensForTokens(
                         remainingAmount,
