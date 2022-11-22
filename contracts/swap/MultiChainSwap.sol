@@ -17,24 +17,12 @@ import "./SafeMath.sol";
              \|___|/                                                            
  */
 
-// interface ICbridge {
-//     function send (
-//         address _receiver,
-//         address _token,
-//         uint256 _amount,
-//         uint64 _dstChainId,
-//         uint64 _nonce,
-//         uint32 _maxSlippage // slippage * 1M, eg. 0.5% -> 5000
-//     )external;
-// }
-
 contract CrossChain is Ownable {
     // variables and mappings
     using SafeMath for uint256;
     uint256 constant divider = 10000;
     uint256 constant swapTimeout = 900;
     uint256 public fee;
-    // address public cbridgeAddress; // 0xf89354F314faF344Abd754924438bA798E306DF2
     address public router; // 0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3
     address public WETH;
     mapping(address => bool) public zeroFee;
@@ -63,10 +51,6 @@ contract CrossChain is Ownable {
         fee = _fee;
     }
 
-    // function updateBridgeContract(address _cbridgeAddress) public onlyOwner {
-    //     cbridgeAddress = _cbridgeAddress;
-    // }
-
     function setFreeFee(address _target, bool _isFreeFee) public onlyOwner {
         zeroFee[_target] = _isFreeFee;
     }
@@ -79,11 +63,22 @@ contract CrossChain is Ownable {
         uint256 _percentSlippage,
         uint64 _dstChainId // uint64 _nonce, // uint32 _maxSlippage
     ) external payable {
+        if (_dstChainId == 97) {
+            swapSameChain(
+                _receiver,
+                _tokenFrom,
+                _tokenTo,
+                _amountIn,
+                _percentSlippage
+            );
+            return;
+        }
+
         uint256 amountOut = 0;
+        uint256 remainingAmount = _amountIn;
         if (msg.value > 0) {
             require(msg.value == _amountIn, "Invalid input");
-            uint256 remainingAmount = msg.value;
-            if (!zeroFee[msg.sender] && fee > 0 && _dstChainId != 97) {
+            if (!zeroFee[msg.sender] && fee > 0) {
                 uint256 totalFee = (fee * _amountIn) / divider;
                 remainingAmount = remainingAmount.sub(totalFee);
             }
@@ -109,12 +104,6 @@ contract CrossChain is Ownable {
             uint256 amountOutMin = (amt[amt.length - 1] *
                 (100 - _percentSlippage)) / 100;
 
-            if (_dstChainId == 97) {
-                IUniswapV2Router(router).swapExactETHForTokens{
-                    value: remainingAmount
-                }(amountOutMin, path, _receiver, block.timestamp + swapTimeout);
-                return;
-            }
             uint256[] memory amounts = IUniswapV2Router(router)
                 .swapExactETHForTokens{value: remainingAmount}(
                 amountOutMin,
@@ -129,14 +118,12 @@ contract CrossChain is Ownable {
                 address(this),
                 _amountIn
             );
-            require(result, "token transfer fail");
-
-            uint256 remainingAmount = _amountIn;
+            require(result, "[DYNA]: Token transfer fail");
             if (!zeroFee[msg.sender] && fee > 0 && _dstChainId != 97) {
                 uint256 totalFee = (fee * _amountIn) / divider;
                 remainingAmount = remainingAmount.sub(totalFee);
             }
-            if (_tokenFrom == _tokenTo && _dstChainId != 97) {
+            if (_tokenFrom == _tokenTo) {
                 emit SwapForToken(
                     _receiver,
                     _tokenTo,
@@ -166,16 +153,7 @@ contract CrossChain is Ownable {
                 require(amt[amt.length - 1] > 0, "Invalid param");
                 uint256 amountOutMin = (amt[amt.length - 1] *
                     (100 - _percentSlippage)) / 100;
-                if (_dstChainId == 97) {
-                    IUniswapV2Router(router).swapExactTokensForTokens(
-                        remainingAmount,
-                        amountOutMin,
-                        path,
-                        _receiver,
-                        block.timestamp + swapTimeout
-                    );
-                    return;
-                }
+
                 uint256[] memory amounts = IUniswapV2Router(router)
                     .swapExactTokensForTokens(
                         remainingAmount,
@@ -189,16 +167,71 @@ contract CrossChain is Ownable {
         }
 
         emit SwapForToken(_receiver, _tokenTo, amountOut, _dstChainId);
+    }
 
-        // appove(cbridgeAddress, _tokenTo, amountOut);
-        // ICbridge(cbridgeAddress).send(
-        //     _receiver,
-        //     _tokenTo,
-        //     amountOut,
-        //     _dstChainId,
-        //     _nonce,
-        //     _maxSlippage
-        // );
+    function swapSameChain(
+        address _receiver,
+        address _tokenFrom,
+        address _tokenTo,
+        uint256 _amountIn,
+        uint256 _percentSlippage
+    ) internal {
+        if (msg.value > 0) {
+            address[] memory path;
+            path = new address[](2);
+            path[0] = WETH;
+            path[1] = _tokenTo;
+            uint256[] memory amt = IUniswapV2Router(router).getAmountsOut(
+                _amountIn,
+                path
+            );
+
+            require(amt[amt.length - 1] > 0, "Invalid param");
+            uint256 amountOutMin = (amt[amt.length - 1] *
+                (100 - _percentSlippage)) / 100;
+
+            IUniswapV2Router(router).swapExactETHForTokens{value: msg.value}(
+                amountOutMin,
+                path,
+                _receiver,
+                block.timestamp + swapTimeout
+            );
+            return;
+        } else {
+            bool result = IERC20(_tokenFrom).transferFrom(
+                msg.sender,
+                address(this),
+                _amountIn
+            );
+            require(result, "[DYNA]: Token transfer fail");
+            appove(router, _tokenFrom, _amountIn);
+            address[] memory path;
+            if (_tokenFrom == WETH || _tokenTo == WETH) {
+                path = new address[](2);
+                path[0] = _tokenFrom;
+                path[1] = _tokenTo;
+            } else {
+                path = new address[](3);
+                path[0] = _tokenFrom;
+                path[1] = WETH;
+                path[2] = _tokenTo;
+            }
+
+            uint256[] memory amt = IUniswapV2Router(router).getAmountsOut(
+                _amountIn,
+                path
+            );
+            require(amt[amt.length - 1] > 0, "Invalid param");
+            uint256 amountOutMin = (amt[amt.length - 1] *
+                (100 - _percentSlippage)) / 100;
+            IUniswapV2Router(router).swapExactTokensForTokens(
+                _amountIn,
+                amountOutMin,
+                path,
+                _receiver,
+                block.timestamp + swapTimeout
+            );
+        }
     }
 
     function appove(

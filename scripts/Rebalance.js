@@ -15,7 +15,10 @@ async function main() {
 
   // We get the contract to deploy
   const Rebalance = await hre.ethers.getContractFactory("Rebalance");
-  const rebalance = await Rebalance.deploy([]);
+  const rebalance = await Rebalance.deploy([
+    "0x2B9960680D91d7791e9a24aCFb03CE0d234cC708",
+    "0xa71cb44a75E4c10101E11De8165ca4AC2794c3d3",
+  ]);
 
   await rebalance.deployed();
 
