@@ -3,6 +3,18 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+/**
+ ________      ___    ___ ________   ________  _____ ______   ___  ________     
+|\   ___ \    |\  \  /  /|\   ___  \|\   __  \|\   _ \  _   \|\  \|\   ____\    
+\ \  \_|\ \   \ \  \/  / | \  \\ \  \ \  \|\  \ \  \\\__\ \  \ \  \ \  \___|    
+ \ \  \ \\ \   \ \    / / \ \  \\ \  \ \   __  \ \  \\|__| \  \ \  \ \  \       
+  \ \  \_\\ \   \/  /  /   \ \  \\ \  \ \  \ \  \ \  \    \ \  \ \  \ \  \____  
+   \ \_______\__/  / /      \ \__\\ \__\ \__\ \__\ \__\    \ \__\ \__\ \_______\
+    \|_______|\___/ /        \|__| \|__|\|__|\|__|\|__|     \|__|\|__|\|_______|
+             \|___|/                                                            
+
+ */
+
 interface IDyLending {
     function reinvest() external;
 }
@@ -55,5 +67,18 @@ contract Rebalance is Ownable {
                 IDyLending(lendings[i].contractAddr).reinvest();
             }
         }
+    }
+
+    function getLending(uint256 lendingId_)
+        public
+        view
+        returns (LendingData memory)
+    {
+        LendingData memory lendingData = lendings[lendingId_];
+        return lendingData;
+    }
+
+    function getLendingNumber() public view returns (uint256) {
+        return lendings.length;
     }
 }
