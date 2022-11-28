@@ -3,9 +3,9 @@
 pragma solidity ^0.8.13;
 
 import "./DyToken.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -19,8 +19,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
  */
 
-abstract contract DyETH is DyToken, ReentrancyGuard {
-    using SafeERC20 for IERC20;
+abstract contract DyETH is DyToken, ReentrancyGuardUpgradeable {
+    using SafeERC20Upgradeable for IERC20;
     uint256[] public totalValues = [
         0,
         1000000,
@@ -33,9 +33,9 @@ abstract contract DyETH is DyToken, ReentrancyGuard {
     uint256 totalTokenStack = 0;
     uint256 ONE_MONTH_IN_SECONDS = 30 days;
 
-    constructor(string memory name_, string memory symbol_)
-        DyToken(name_, symbol_)
-    {}
+    // constructor(string memory name_, string memory symbol_)
+    //     DyToken(name_, symbol_)
+    // {}
 
     function deposit(uint256 amountUnderlying_)
         public

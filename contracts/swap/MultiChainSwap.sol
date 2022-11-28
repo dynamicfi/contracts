@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.13;
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./UniswapInterface.sol";
 import "./SafeMath.sol";
 
@@ -17,7 +17,7 @@ import "./SafeMath.sol";
              \|___|/                                                            
  */
 
-contract CrossChain is Ownable {
+contract CrossChain is OwnableUpgradeable {
     // variables and mappings
     using SafeMath for uint256;
     uint256 constant divider = 10000;
@@ -63,7 +63,7 @@ contract CrossChain is Ownable {
         uint256 _percentSlippage,
         uint64 _dstChainId // uint64 _nonce, // uint32 _maxSlippage
     ) external payable {
-        if (_dstChainId == 97) {
+        if (_dstChainId == 5) {
             swapSameChain(
                 _receiver,
                 _tokenFrom,
@@ -113,13 +113,13 @@ contract CrossChain is Ownable {
             );
             amountOut = amounts[amounts.length - 1];
         } else {
-            bool result = IERC20(_tokenFrom).transferFrom(
+            bool result = IERC20Upgradeable(_tokenFrom).transferFrom(
                 msg.sender,
                 address(this),
                 _amountIn
             );
             require(result, "[DYNA]: Token transfer fail");
-            if (!zeroFee[msg.sender] && fee > 0 && _dstChainId != 97) {
+            if (!zeroFee[msg.sender] && fee > 0 && _dstChainId != 5) {
                 uint256 totalFee = (fee * _amountIn) / divider;
                 remainingAmount = remainingAmount.sub(totalFee);
             }
@@ -198,7 +198,7 @@ contract CrossChain is Ownable {
             );
             return;
         } else {
-            bool result = IERC20(_tokenFrom).transferFrom(
+            bool result = IERC20Upgradeable(_tokenFrom).transferFrom(
                 msg.sender,
                 address(this),
                 _amountIn
@@ -239,13 +239,15 @@ contract CrossChain is Ownable {
         address token,
         uint256 amount
     ) internal {
-        if (IERC20(token).allowance(address(this), spener) < amount) {
-            IERC20(token).approve(spener, amount);
+        if (
+            IERC20Upgradeable(token).allowance(address(this), spener) < amount
+        ) {
+            IERC20Upgradeable(token).approve(spener, amount);
         }
     }
 
     function withdraw(address _token, uint256 _amount) public onlyOwner {
-        IERC20(_token).transfer(_msgSender(), _amount);
+        IERC20Upgradeable(_token).transfer(_msgSender(), _amount);
     }
 
     function withdrawETH(uint256 _amount) public payable onlyOwner {
