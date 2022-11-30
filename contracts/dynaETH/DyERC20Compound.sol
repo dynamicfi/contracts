@@ -2,14 +2,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "../DyERC20.sol";
 import "./interfaces/ICompoundERC20Delegator.sol";
 import "./interfaces/ICompoundUnitroller.sol";
 import "./interfaces/ISwapRouter.sol";
-
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./lib/CompoundLibrary.sol";
 
 /**
@@ -23,7 +24,7 @@ import "./lib/CompoundLibrary.sol";
              \|___|/                                                            
  */
 
-contract DyERC20Compound is DyERC20 {
+contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
     using SafeMath for uint256;
 
     struct LeverageSettings {
@@ -41,8 +42,8 @@ contract DyERC20Compound is DyERC20 {
 
     ICompoundERC20Delegator public tokenDelegator;
     ICompoundUnitroller public rewardController;
-    IERC20 public compToken;
-    IERC20 public WETH;
+    IERC20Upgradeable public compToken;
+    IERC20Upgradeable public WETH;
     ISwapRouter public swapRouter; // v2
     uint256 public leverageLevel;
     uint256 public leverageBips;
@@ -50,7 +51,7 @@ contract DyERC20Compound is DyERC20 {
     uint256 public redeemLimitSafetyMargin;
     uint256 public totalInterest;
 
-    constructor(
+    function initialize(
         address underlying_,
         string memory name_,
         string memory symbol_,
@@ -62,12 +63,14 @@ contract DyERC20Compound is DyERC20 {
         address USD_,
         address swapRouter_,
         LeverageSettings memory leverageSettings_
-    ) DyERC20(underlying_, name_, symbol_) {
+    ) public initializer {
+        __Ownable_init();
+        __initialize__DyERC20(underlying_, name_, symbol_);
         tokenDelegator = ICompoundERC20Delegator(tokenDelegator_);
         rewardController = ICompoundUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;
-        compToken = IERC20(compAddress_);
-        WETH = IERC20(WETH_);
+        compToken = IERC20Upgradeable(compAddress_);
+        WETH = IERC20Upgradeable(WETH_);
         DYNA = DYNA_;
         USD = USD_;
         swapRouter = ISwapRouter(swapRouter_);

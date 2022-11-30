@@ -19,7 +19,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
  */
 
 abstract contract DyERC20 is DyToken {
-    IERC20 public underlying;
+    IERC20Upgradeable public underlying;
     uint256[] public totalValues = [
         0,
         1000000,
@@ -32,12 +32,13 @@ abstract contract DyERC20 is DyToken {
     uint256 totalTokenStack = 0;
     uint256 ONE_MONTH_IN_SECONDS = 30 days;
 
-    constructor(
+    function __initialize__DyERC20(
         address underlying_,
         string memory name_,
         string memory symbol_
-    ) DyToken(name_, symbol_) {
-        underlying = IERC20(underlying_);
+    ) internal onlyInitializing {
+        __initialize__DyToken(name_, symbol_);
+        underlying = IERC20Upgradeable(underlying_);
     }
 
     function deposit(uint256 amountUnderlying_) public virtual {

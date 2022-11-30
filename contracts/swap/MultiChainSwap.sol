@@ -3,6 +3,7 @@
 pragma solidity ^0.8.13;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./UniswapInterface.sol";
 import "./SafeMath.sol";
 
@@ -17,7 +18,7 @@ import "./SafeMath.sol";
              \|___|/                                                            
  */
 
-contract CrossChain is OwnableUpgradeable {
+contract CrossChain is Initializable, OwnableUpgradeable {
     // variables and mappings
     using SafeMath for uint256;
     uint256 constant divider = 10000;
@@ -35,13 +36,12 @@ contract CrossChain is OwnableUpgradeable {
         uint256 chainId
     );
 
-    constructor(
-        // address _cbridgeAddress,
+    function initialize(
         uint256 _fee,
         address _router,
         address _weth
-    ) {
-        // cbridgeAddress = _cbridgeAddress;
+    ) public initializer {
+        __Ownable_init();
         router = _router;
         fee = _fee;
         WETH = _weth;
@@ -61,9 +61,9 @@ contract CrossChain is OwnableUpgradeable {
         address _tokenTo,
         uint256 _amountIn,
         uint256 _percentSlippage,
-        uint64 _dstChainId // uint64 _nonce, // uint32 _maxSlippage
+        uint64 _dstChainId
     ) external payable {
-        if (_dstChainId == 5) {
+        if (_dstChainId == block.chainid) {
             swapSameChain(
                 _receiver,
                 _tokenFrom,
@@ -119,7 +119,7 @@ contract CrossChain is OwnableUpgradeable {
                 _amountIn
             );
             require(result, "[DYNA]: Token transfer fail");
-            if (!zeroFee[msg.sender] && fee > 0 && _dstChainId != 5) {
+            if (!zeroFee[msg.sender] && fee > 0) {
                 uint256 totalFee = (fee * _amountIn) / divider;
                 remainingAmount = remainingAmount.sub(totalFee);
             }
@@ -253,5 +253,29 @@ contract CrossChain is OwnableUpgradeable {
     function withdrawETH(uint256 _amount) public payable onlyOwner {
         (bool success, ) = _msgSender().call{value: _amount}("");
         require(success, "Transfer ETH failed");
+    }
+
+    function getAmountOut(
+        address _tokenFrom,
+        address _tokenTo,
+        uint256 _amountIn
+    ) public view returns (uint256) {
+        address[] memory path;
+        if (_tokenFrom == WETH || _tokenTo == WETH) {
+            path = new address[](2);
+            path[0] = _tokenFrom;
+            path[1] = _tokenTo;
+        } else {
+            path = new address[](3);
+            path[0] = _tokenFrom;
+            path[1] = WETH;
+            path[2] = _tokenTo;
+        }
+        uint256[] memory amt = IUniswapV2Router(router).getAmountsOut(
+            _amountIn,
+            path
+        );
+        require(amt[amt.length - 1] > 0, "Invalid param");
+        return amt[amt.length - 1];
     }
 }

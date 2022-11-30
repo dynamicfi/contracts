@@ -1,0 +1,128 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0xB712cD808B9cD50685facb781fa9019C729C21aC",
+    "txHash": "0x18e67590f866b22eb72a760dc39b87ef8504aab3e935b85be20ccbc2cc071d9f"
+  },
+  "proxies": [
+    {
+      "address": "0x5EC180548505Be522D2c3A9106b7c38873C09883",
+      "txHash": "0x986e2855524816b52c8e361d7eedad4302d062c3d7eece3a87bf875ae868abcf",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "d7aa58dc893f29b688235729d83d14f72e42706652a6d52c173a0eb290dd9860": {
+      "address": "0x49aaeDbcB7DBf61c88FDa586F2535FE8C56d14B7",
+      "txHash": "0xa8a9f0f96c7c9ed322b9640dd6672f3ad918e09bb026b6f46906a68f4f67a29d",
+      "layout": {
+        "solcVersion": "0.8.13",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "fee",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_uint256",
+            "contract": "CrossChain",
+            "src": "contracts/swap/MultiChainSwap.sol:26"
+          },
+          {
+            "label": "router",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_address",
+            "contract": "CrossChain",
+            "src": "contracts/swap/MultiChainSwap.sol:27"
+          },
+          {
+            "label": "WETH",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_address",
+            "contract": "CrossChain",
+            "src": "contracts/swap/MultiChainSwap.sol:28"
+          },
+          {
+            "label": "zeroFee",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "CrossChain",
+            "src": "contracts/swap/MultiChainSwap.sol:29"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    }
+  }
+}
