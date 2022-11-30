@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -17,19 +17,15 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20Burnable
 
  */
 
-contract Dynamic is
-    ERC20Upgradeable,
-    OwnableUpgradeable,
-    ERC20BurnableUpgradeable
-{
+contract Dynamic is ERC20, Ownable, ERC20Burnable {
     uint256 totalLocked;
 
     event Lock(uint256 amount);
     event Unlock(uint256 amount);
 
-    // constructor() ERC20("Dynamic", "DYNA") {
-    //     _mint(_msgSender(), 400000 * 10**18);
-    // }
+    constructor() ERC20("Dynamic", "DYNA") {
+        _mint(_msgSender(), 400000 * 10**18);
+    }
 
     function mint(uint256 _amount) public onlyOwner {
         _mint(_msgSender(), _amount);
