@@ -59,7 +59,7 @@ module.exports = {
       // url: "https://goerli.infura.io/v3/43885af4abc848f0a04f9fdabd95ea43",
       url: "https://goerli.infura.io/v3/daf3055db72a4cf5812e147fbc06ec1a",
       chainId: 5,
-      // gasPrice: 63000000000,
+      gasPrice: 42000000000,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },

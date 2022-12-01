@@ -4,7 +4,6 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
-const { upgrades } = require("hardhat");
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -15,12 +14,12 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const DyUSDTVenus = await hre.ethers.getContractFactory("DyBEP20Venus");
-  const dyUSDTVenus = await upgrades.deployProxy(DyUSDTVenus, [
-    "0xA11c8D9DC9b66E209Ef60F0C8D969D3CD988782c", // USDT
-    "Dynamic USDT",
-    "DyUSDT",
-    "0xb7526572FFE56AB9D7489838Bf2E18e3323b441A", // vUSDT
+  const DyXRPVenus = await hre.ethers.getContractFactory("DyBEP20Venus");
+  const dyXRPVenus = await DyXRPVenus.deploy(
+    "0x75107940Cf1121232C0559c747A986DEfbc69DA9", // XRP
+    "Dynamic XRP",
+    "DyXRP",
+    "0x74469281310195A04840Daf6EdF576F559a3dE80", // vXRP
     "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D", // Unitroller
     "0xB9e0E753630434d7863528cc73CB7AC638a7c8ff", // xvsAddress
     "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd", // WBNB
@@ -31,12 +30,12 @@ async function main() {
       leverageLevel: 15000,
       leverageBips: 10000,
       minMinting: "10000", // 0.1 USDT
-    },
-  ]);
+    }
+  );
 
-  await dyUSDTVenus.deployed();
+  await dyXRPVenus.deployed();
 
-  console.log("DyUSDTVenus deployed to:", dyUSDTVenus.address);
+  console.log("DyXRPVenus deployed to:", dyXRPVenus.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
