@@ -2,16 +2,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "../DyETH.sol";
 import "./interfaces/ICompoundETHDelegator.sol";
 import "./interfaces/ICompoundERC20Delegator.sol";
 import "./interfaces/ICompoundUnitroller.sol";
 import "./interfaces/ISwapRouter.sol";
 import "./interfaces/IWETH9.sol";
-
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./lib/CompoundLibrary.sol";
 
 /**
@@ -25,7 +26,7 @@ import "./lib/CompoundLibrary.sol";
              \|___|/                                                            
  */
 
-contract DyETHCompound is DyETH {
+contract DyETHCompound is Initializable, OwnableUpgradeable, DyETH {
     using SafeMath for uint256;
 
     struct LeverageSettings {
@@ -52,7 +53,7 @@ contract DyETHCompound is DyETH {
     uint256 public redeemLimitSafetyMargin;
     uint256 public totalInterest;
 
-    constructor(
+    function initialize(
         string memory name_,
         string memory symbol_,
         address tokenDelegator_,
@@ -63,7 +64,9 @@ contract DyETHCompound is DyETH {
         address USD_,
         address swapRouter_,
         LeverageSettings memory leverageSettings_
-    ) DyETH(name_, symbol_) {
+    ) public initializer {
+        __Ownable_init();
+        __initialize__DyETH(name_, symbol_);
         tokenDelegator = ICompoundETHDelegator(tokenDelegator_);
         rewardController = ICompoundUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;

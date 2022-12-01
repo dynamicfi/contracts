@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -16,12 +16,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
  */
 
-contract TestnetToken is ERC20, Ownable {
-    constructor(string memory _name, string memory _symbol)
-        ERC20(_name, _symbol)
-    {
-        _mint(_msgSender(), 1000000 * 10**18);
-    }
+contract TestnetToken is ERC20Upgradeable, OwnableUpgradeable {
+    // constructor(string memory _name, string memory _symbol)
+    //     ERC20Upgradeable(_name, _symbol)
+    // {
+    //     _mint(_msgSender(), 1000000 * 10**18);
+    // }
 
     function mint(address _receiver, uint256 _amount) external onlyOwner {
         _mint(_receiver, _amount);

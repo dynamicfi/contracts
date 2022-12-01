@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -18,7 +19,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
  */
 
-abstract contract DyToken is ERC20, Ownable {
+abstract contract DyToken is
+    Initializable,
+    ERC20Upgradeable,
+    OwnableUpgradeable
+{
     using SafeMath for uint256;
 
     bool public depositEnable;
@@ -54,9 +59,12 @@ abstract contract DyToken is ERC20, Ownable {
     event Reinvest(uint256 newTotalDeposits, uint256 newTotalSupply);
     event UpdateMinTokensToReinvest(uint256 oldValue, uint256 newValue);
 
-    constructor(string memory name_, string memory symbol_)
-        ERC20(name_, symbol_)
-    {}
+    function __initialize__DyToken(string memory name_, string memory symbol_)
+        internal
+        onlyInitializing
+    {
+        __ERC20_init(name_, symbol_);
+    }
 
     /**
      * @notice Enable/disable deposits
@@ -145,7 +153,7 @@ abstract contract DyToken is ERC20, Ownable {
     }
 
     function _claimDyna(uint256 _amount) internal {
-        IERC20 dyna = IERC20(DYNA);
+        IERC20Upgradeable dyna = IERC20Upgradeable(DYNA);
         DepositStruct storage user = userInfo[_msgSender()];
         require(user.dynaBalance >= _amount, "DyToken::not enough balance");
         user.dynaBalance -= _amount;

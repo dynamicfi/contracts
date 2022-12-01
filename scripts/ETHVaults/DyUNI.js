@@ -4,6 +4,7 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
+const { upgrades } = require("hardhat");
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -15,7 +16,7 @@ async function main() {
 
   // We get the contract to deploy
   const DyUNIVenus = await hre.ethers.getContractFactory("DyERC20Compound");
-  const dyUNIVenus = await DyUNIVenus.deploy(
+  const dyUNIVenus = await upgrades.deployProxy(DyUNIVenus, [
     "0x208F73527727bcB2D9ca9bA047E3979559EB08cC", // UNI
     "Dynamic UNI",
     "DyUNI",
@@ -30,8 +31,8 @@ async function main() {
       leverageLevel: 15000,
       leverageBips: 10000,
       minMinting: "10000", // 0.1 UNI
-    }
-  );
+    },
+  ]);
 
   await dyUNIVenus.deployed();
 

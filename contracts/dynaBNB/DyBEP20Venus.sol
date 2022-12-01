@@ -2,14 +2,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "../DyERC20.sol";
 import "./interfaces/IVenusBEP20Delegator.sol";
 import "./interfaces/IVenusUnitroller.sol";
 import "./interfaces/IPancakeRouter.sol";
-
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./lib/VenusLibrary.sol";
 
 /**
@@ -23,7 +24,7 @@ import "./lib/VenusLibrary.sol";
              \|___|/                                                            
  */
 
-contract DyBEP20Venus is DyERC20 {
+contract DyBEP20Venus is Initializable, OwnableUpgradeable, DyERC20 {
     using SafeMath for uint256;
 
     struct LeverageSettings {
@@ -41,8 +42,8 @@ contract DyBEP20Venus is DyERC20 {
 
     IVenusBEP20Delegator public tokenDelegator;
     IVenusUnitroller public rewardController;
-    IERC20 public xvsToken;
-    IERC20 public WBNB;
+    IERC20Upgradeable public xvsToken;
+    IERC20Upgradeable public WBNB;
     IPancakeRouter public pancakeRouter;
     uint256 public leverageLevel;
     uint256 public leverageBips;
@@ -50,7 +51,7 @@ contract DyBEP20Venus is DyERC20 {
     uint256 public redeemLimitSafetyMargin;
     uint256 public totalInterest;
 
-    constructor(
+    function initialize(
         address underlying_,
         string memory name_,
         string memory symbol_,
@@ -62,12 +63,14 @@ contract DyBEP20Venus is DyERC20 {
         address USD_,
         address pancakeRouter_,
         LeverageSettings memory leverageSettings_
-    ) DyERC20(underlying_, name_, symbol_) {
+    ) public initializer {
+        __Ownable_init();
+        __initialize__DyERC20(underlying_, name_, symbol_);
         tokenDelegator = IVenusBEP20Delegator(tokenDelegator_);
         rewardController = IVenusUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;
-        xvsToken = IERC20(xvsAddress_);
-        WBNB = IERC20(WBNB_);
+        xvsToken = IERC20Upgradeable(xvsAddress_);
+        WBNB = IERC20Upgradeable(WBNB_);
         DYNA = DYNA_;
         USD = USD_;
         pancakeRouter = IPancakeRouter(pancakeRouter_);

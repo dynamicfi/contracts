@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 
 import "./DyToken.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -19,25 +19,23 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 
 abstract contract DyERC20 is DyToken {
-    IERC20 public underlying;
-    uint256[] public totalValues = [
-        0,
-        1000000,
-        10000000,
-        100000000,
-        1000000000
-    ]; // for total value in dollar
+    IERC20Upgradeable public underlying;
+    uint256[] public totalValues;
+    uint256[] public percentByValues;
+    uint256 totalTokenStack;
+    uint256 ONE_MONTH_IN_SECONDS;
 
-    uint256[] public percentByValues = [80, 65, 50, 35, 20];
-    uint256 totalTokenStack = 0;
-    uint256 ONE_MONTH_IN_SECONDS = 30 days;
-
-    constructor(
+    function __initialize__DyERC20(
         address underlying_,
         string memory name_,
         string memory symbol_
-    ) DyToken(name_, symbol_) {
-        underlying = IERC20(underlying_);
+    ) internal onlyInitializing {
+        __initialize__DyToken(name_, symbol_);
+        underlying = IERC20Upgradeable(underlying_);
+        totalValues = [0, 1000000, 10000000, 100000000, 1000000000]; // for total value in dollar
+        percentByValues = [80, 65, 50, 35, 20];
+        totalTokenStack = 0;
+        ONE_MONTH_IN_SECONDS = 30 days;
     }
 
     function deposit(uint256 amountUnderlying_) public virtual {
