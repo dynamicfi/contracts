@@ -152,12 +152,11 @@ abstract contract DyToken is
         );
     }
 
-    function _claimDyna(uint256 _amount) internal {
-        IERC20Upgradeable dyna = IERC20Upgradeable(DYNA);
+    function _claimDyna(uint256 _amount, address _tokenOut) internal {
         DepositStruct storage user = userInfo[_msgSender()];
         require(user.dynaBalance >= _amount, "DyToken::not enough balance");
         user.dynaBalance -= _amount;
-        dyna.transfer(_msgSender(), _amount);
+        _cashOutDyna(_msgSender(), _amount, _tokenOut);
     }
 
     function _getDynaBalance() internal view returns (uint256) {
@@ -205,4 +204,15 @@ abstract contract DyToken is
     function _doTransferOut(address payable to_, uint256 amount_)
         internal
         virtual;
+
+    /**
+     * @param _receiver: The receiver cash out dyna
+     * @param _amount: Amount of Dyna want to cash out
+     * @param _tokenOut: The address of token want to swap out from Dyna
+     */
+    function _cashOutDyna(
+        address _receiver,
+        uint256 _amount,
+        address _tokenOut
+    ) internal virtual;
 }

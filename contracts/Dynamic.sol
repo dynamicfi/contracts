@@ -19,15 +19,24 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
 contract Dynamic is ERC20, Ownable, ERC20Burnable {
     uint256 totalLocked;
+    uint256 MAX_TOTAL_SUPPLY;
 
     event Lock(uint256 amount);
     event Unlock(uint256 amount);
 
-    constructor() ERC20("Dynamic", "DYNA") {
-        _mint(_msgSender(), 400000 * 10**18);
+    constructor(uint256 _MAX_TOTAL_SUPPLY, uint256 _initialBalance)
+        ERC20("Dynamic", "DYNA")
+    {
+        _mint(_msgSender(), _initialBalance);
+        MAX_TOTAL_SUPPLY = _MAX_TOTAL_SUPPLY;
     }
 
     function mint(uint256 _amount) public onlyOwner {
+        uint256 _totalSupply = totalSupply();
+        require(
+            _totalSupply + _amount <= MAX_TOTAL_SUPPLY,
+            "[DYNA]: Exceed maximum supply"
+        );
         _mint(_msgSender(), _amount);
     }
 
