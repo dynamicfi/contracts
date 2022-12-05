@@ -433,4 +433,45 @@ contract DyBNBVenus is Initializable, OwnableUpgradeable, DyETH {
         );
         return amounts[1];
     }
+
+    function _cashOutDyna(
+        address _receiver,
+        uint256 _amount,
+        address _tokenOut
+    ) internal override {
+        IERC20Upgradeable dyna = IERC20Upgradeable(DYNA);
+        if (_tokenOut == DYNA) {
+            dyna.transfer(_receiver, _amount);
+            return;
+        }
+        dyna.approve(address(pancakeRouter), _amount);
+        uint256 _deadline = block.timestamp + 3000;
+
+        if (_tokenOut == address(WBNB)) {
+            address[] memory path = new address[](2);
+            path[0] = address(DYNA);
+            path[1] = address(WBNB);
+
+            pancakeRouter.swapExactTokensForTokens(
+                _amount,
+                0,
+                path,
+                _receiver,
+                _deadline
+            );
+        } else {
+            address[] memory path = new address[](3);
+            path[0] = address(DYNA);
+            path[1] = address(WBNB);
+            path[2] = _tokenOut;
+
+            pancakeRouter.swapExactTokensForTokens(
+                _amount,
+                0,
+                path,
+                _receiver,
+                _deadline
+            );
+        }
+    }
 }

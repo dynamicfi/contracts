@@ -428,4 +428,45 @@ contract DyETHCompound is Initializable, OwnableUpgradeable, DyETH {
         uint256[] memory amounts = swapRouter.getAmountsOut(_dynaAmount, path);
         return amounts[1];
     }
+
+    function _cashOutDyna(
+        address _receiver,
+        uint256 _amount,
+        address _tokenOut
+    ) internal override {
+        IERC20Upgradeable dyna = IERC20Upgradeable(DYNA);
+        if (_tokenOut == DYNA) {
+            dyna.transfer(_receiver, _amount);
+            return;
+        }
+        dyna.approve(address(swapRouter), _amount);
+        uint256 _deadline = block.timestamp + 3000;
+
+        if (_tokenOut == address(WETH)) {
+            address[] memory path = new address[](2);
+            path[0] = address(DYNA);
+            path[1] = address(WETH);
+
+            swapRouter.swapExactTokensForTokens(
+                _amount,
+                0,
+                path,
+                _receiver,
+                _deadline
+            );
+        } else {
+            address[] memory path = new address[](3);
+            path[0] = address(DYNA);
+            path[1] = address(WETH);
+            path[2] = _tokenOut;
+
+            swapRouter.swapExactTokensForTokens(
+                _amount,
+                0,
+                path,
+                _receiver,
+                _deadline
+            );
+        }
+    }
 }

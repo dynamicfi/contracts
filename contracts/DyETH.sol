@@ -44,11 +44,37 @@ abstract contract DyETH is DyToken, ReentrancyGuardUpgradeable {
         virtual
         nonReentrant
     {
+        DepositStruct storage user = userInfo[_msgSender()];
+        if (!user.enable) {
+            depositors.push(_msgSender());
+            user.enable = true;
+        }
+
+        user.amount += amountUnderlying_;
+        user.lastDepositTime = block.timestamp;
+        totalTokenStack += amountUnderlying_;
+
         _deposit(amountUnderlying_);
     }
 
     function withdraw(uint256 amount_) public virtual nonReentrant {
+        DepositStruct storage user = userInfo[_msgSender()];
+        require(user.enable, "DyToken:: Need to initial account");
+        require(user.amount >= amount_, "DyToken:: Not enough balance");
+
+        user.amount -= amount_;
+        user.lastDepositTime = block.timestamp;
+        totalTokenStack -= amount_;
+
         _withdraw(amount_);
+    }
+
+    function claimDyna(uint256 amount_, address _tokenOut) external {
+        _claimDyna(amount_, _tokenOut);
+    }
+
+    function getDyna() external view returns (uint256) {
+        return _getDynaBalance();
     }
 
     function _doTransferIn(address from_, uint256 amount_)
