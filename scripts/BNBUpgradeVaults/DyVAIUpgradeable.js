@@ -15,28 +15,13 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
+
+  const DY_VAI_ADDRESS = "0x3eFA7C3265b0fA67fC255018e50E5B42EaB75F37";
+
   const DyVAIVenus = await hre.ethers.getContractFactory("DyBEP20Venus");
-  const dyVAIVenus = await upgrades.deployProxy(DyVAIVenus, [
-    "0x5fFbE5302BadED40941A403228E6AD03f93752d9", // VAI
-    "Dynamic VAI",
-    "DyVAI",
-    "0x74469281310195A04840Daf6EdF576F559a3dE80", // vVAI
-    "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D", // Unitroller
-    "0xB9e0E753630434d7863528cc73CB7AC638a7c8ff", // xvsAddress
-    "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd", // WBNB
-    "0x8188F55Bd52f512fae95F9bc96F24A4e7B9d833d", // dyna
-    "0xA11c8D9DC9b66E209Ef60F0C8D969D3CD988782c", // USD
-    "0xD99D1c33F9fC3444f8101754aBC46c52416550D1", // Pancake Router
-    {
-      leverageLevel: 15000,
-      leverageBips: 10000,
-      minMinting: "10000", // 0.1 USDT
-    },
-  ]);
+  await upgrades.upgradeProxy(DY_VAI_ADDRESS, DyVAIVenus);
 
-  await dyVAIVenus.deployed();
-
-  console.log("DyVAIVenus deployed to:", dyVAIVenus.address);
+  console.log("DyVAIVenus upgraded successfully");
 }
 
 // We recommend this pattern to be able to use async/await everywhere

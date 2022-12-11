@@ -127,6 +127,14 @@ contract DyBNBVenus is Initializable, OwnableUpgradeable, DyETH {
         _rollupDebt();
     }
 
+    function updateMinimumBoundaries(
+        uint256 redeemLimitSafetyMargin_,
+        uint256 minMinting_
+    ) public onlyOwner {
+        minMinting = minMinting_;
+        redeemLimitSafetyMargin = redeemLimitSafetyMargin_;
+    }
+
     function _updateLeverage(
         uint256 leverageLevel_,
         uint256 leverageBips_,

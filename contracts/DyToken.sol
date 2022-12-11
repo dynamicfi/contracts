@@ -123,7 +123,6 @@ abstract contract DyToken is
         }
 
         _doTransferIn(_msgSender(), amountUnderlying_);
-        _mint(_msgSender(), _mintTokens);
         _stakeDepositTokens(amountUnderlying_);
         emit Deposit(_msgSender(), amountUnderlying_, _mintTokens);
     }
@@ -139,7 +138,6 @@ abstract contract DyToken is
         uint256 _amountUnderlying = _totalDeposit.mul(amount_).div(
             _totalSupply
         );
-        _burn(_msgSender(), amount_);
         _withdrawDepositTokens(_amountUnderlying);
         _doTransferOut(payable(_msgSender()), _amountUnderlying);
         emit Withdraw(
