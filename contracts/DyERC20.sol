@@ -40,7 +40,7 @@ abstract contract DyERC20 is DyToken {
 
     function deposit(uint256 amountUnderlying_) public virtual {
         DepositStruct storage user = userInfo[_msgSender()];
-        if (!user.enable) {
+        if (user.enable == false) {
             depositors.push(_msgSender());
             user.enable = true;
         }

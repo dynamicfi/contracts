@@ -37,7 +37,12 @@ module.exports = {
       url: "http://127.0.0.1:8545",
     },
     testnet: {
-      url: "https://data-seed-prebsc-1-s2.binance.org:8545/",
+      // url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      url: "https://data-seed-prebsc-2-s1.binance.org:8545",
+      // url: "https://data-seed-prebsc-1-s2.binance.org:8545",
+      // url: "https://data-seed-prebsc-2-s2.binance.org:8545",
+      // url: "https://data-seed-prebsc-1-s3.binance.org:8545",
+      // url: "https://data-seed-prebsc-2-s3.binance.org:8545",
       chainId: 97,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
@@ -59,7 +64,7 @@ module.exports = {
       // url: "https://goerli.infura.io/v3/43885af4abc848f0a04f9fdabd95ea43",
       url: "https://goerli.infura.io/v3/daf3055db72a4cf5812e147fbc06ec1a",
       chainId: 5,
-      gasPrice: 42000000000,
+      // gasPrice: 42000000000,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },

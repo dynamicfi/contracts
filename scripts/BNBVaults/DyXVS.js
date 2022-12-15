@@ -17,10 +17,10 @@ async function main() {
   // We get the contract to deploy
   const DyXVSVenus = await hre.ethers.getContractFactory("DyBEP20Venus");
   const dyXVSVenus = await upgrades.deployProxy(DyXVSVenus, [
-    "0x75107940Cf1121232C0559c747A986DEfbc69DA9", // XVS
+    "0xB9e0E753630434d7863528cc73CB7AC638a7c8ff", // XVS
     "Dynamic XVS",
     "DyXVS",
-    "0x74469281310195A04840Daf6EdF576F559a3dE80", // vXVS
+    "0x6d6F697e34145Bb95c54E77482d97cc261Dc237E", // vXVS
     "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D", // Unitroller
     "0xB9e0E753630434d7863528cc73CB7AC638a7c8ff", // xvsAddress
     "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd", // WBNB
@@ -30,7 +30,7 @@ async function main() {
     {
       leverageLevel: 15000,
       leverageBips: 10000,
-      minMinting: "10000", // 0.1 USDT
+      minMinting: "10000000000000000", // 0.01 USDT
     },
   ]);
 

@@ -2,11 +2,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "./DyToken.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "./DyTokenNonUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -20,18 +19,16 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
  */
 
-abstract contract DyETH is DyToken, ReentrancyGuardUpgradeable {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+abstract contract DyETH is DyTokenNonUpgradeable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     uint256[] public totalValues;
     uint256[] public percentByValues;
     uint256 totalTokenStack;
     uint256 ONE_MONTH_IN_SECONDS;
 
-    function __initialize__DyETH(string memory name_, string memory symbol_)
-        internal
-        onlyInitializing
+    constructor(string memory name_, string memory symbol_)
+        DyTokenNonUpgradeable(name_, symbol_)
     {
-        __initialize__DyToken(name_, symbol_);
         totalValues = [0, 1000000, 10000000, 100000000, 1000000000]; // for total value in dollar
         percentByValues = [80, 65, 50, 35, 20];
         totalTokenStack = 0;
