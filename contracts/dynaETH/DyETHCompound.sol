@@ -2,17 +2,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../DyETH.sol";
 import "./interfaces/ICompoundETHDelegator.sol";
 import "./interfaces/ICompoundERC20Delegator.sol";
 import "./interfaces/ICompoundUnitroller.sol";
 import "./interfaces/ISwapRouter.sol";
 import "./interfaces/IWETH9.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./lib/CompoundLibrary.sol";
 
 /**
@@ -26,7 +25,7 @@ import "./lib/CompoundLibrary.sol";
              \|___|/                                                            
  */
 
-contract DyETHCompound is Initializable, OwnableUpgradeable, DyETH {
+contract DyETHCompound is Ownable, DyETH {
     using SafeMath for uint256;
 
     struct LeverageSettings {
@@ -53,7 +52,7 @@ contract DyETHCompound is Initializable, OwnableUpgradeable, DyETH {
     uint256 public redeemLimitSafetyMargin;
     uint256 public totalInterest;
 
-    function initialize(
+    constructor(
         string memory name_,
         string memory symbol_,
         address tokenDelegator_,
@@ -64,9 +63,7 @@ contract DyETHCompound is Initializable, OwnableUpgradeable, DyETH {
         address USD_,
         address swapRouter_,
         LeverageSettings memory leverageSettings_
-    ) public initializer {
-        __Ownable_init();
-        __initialize__DyETH(name_, symbol_);
+    ) DyETH(name_, symbol_) {
         tokenDelegator = ICompoundETHDelegator(tokenDelegator_);
         rewardController = ICompoundUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;
@@ -434,7 +431,7 @@ contract DyETHCompound is Initializable, OwnableUpgradeable, DyETH {
         uint256 _amount,
         address _tokenOut
     ) internal override {
-        IERC20Upgradeable dyna = IERC20Upgradeable(DYNA);
+        IERC20 dyna = IERC20(DYNA);
         if (_tokenOut == DYNA) {
             dyna.transfer(_receiver, _amount);
             return;

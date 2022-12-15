@@ -16,7 +16,7 @@ async function main() {
 
   // We get the contract to deploy
 
-  const DY_VAI_ADDRESS = "0x3eFA7C3265b0fA67fC255018e50E5B42EaB75F37";
+  const DY_VAI_ADDRESS = "0xCd1799C3e4Bde97E7f4d3fde024d1b1cf30dB8b0";
 
   const DyVAIVenus = await hre.ethers.getContractFactory("DyBEP20Venus");
   await upgrades.upgradeProxy(DY_VAI_ADDRESS, DyVAIVenus);

@@ -255,7 +255,10 @@ contract DyBEP20Venus is Initializable, OwnableUpgradeable, DyERC20 {
             .mul(leverageLevel)
             .div(leverageBips)
             .sub(balance.sub(borrowed).sub(amountToBeFreed_));
-        uint256 toRepay = borrowed.sub(targetBorrow);
+        uint256 toRepay = 0;
+        if (borrowed > targetBorrow) {
+            toRepay = borrowed.sub(targetBorrow);
+        }
         underlying.approve(address(tokenDelegator), borrowed);
         while (toRepay > 0) {
             uint256 unrollAmount = _getRedeemable(

@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -19,11 +18,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
  */
 
-abstract contract DyToken is
-    Initializable,
-    ERC20Upgradeable,
-    OwnableUpgradeable
-{
+abstract contract DyTokenNonUpgradeable is ERC20, Ownable {
     using SafeMath for uint256;
 
     bool public depositEnable;
@@ -47,24 +42,14 @@ abstract contract DyToken is
         uint256 amountUnderlying,
         uint256 amountToken
     );
-    event Withdraw(
-        address sender,
-        uint256 amount,
-        uint256 amountUnderlying,
-        uint256 amountUnderlying1,
-        uint256 amountUnderlying2,
-        uint256 amountUnderlying3
-    );
+    event Withdraw(address sender, uint256 amount);
     event DepositsEnabled(bool newValue);
     event Reinvest(uint256 newTotalDeposits, uint256 newTotalSupply);
     event UpdateMinTokensToReinvest(uint256 oldValue, uint256 newValue);
 
-    function __initialize__DyToken(string memory name_, string memory symbol_)
-        internal
-        onlyInitializing
-    {
-        __ERC20_init(name_, symbol_);
-    }
+    constructor(string memory name_, string memory symbol_)
+        ERC20(name_, symbol_)
+    {}
 
     /**
      * @notice Enable/disable deposits
@@ -135,6 +120,7 @@ abstract contract DyToken is
         require(amount_ > 0, "DyToken::amount_ > 0");
         _withdrawDepositTokens(amount_);
         _doTransferOut(payable(_msgSender()), amount_);
+        emit Withdraw(_msgSender(), amount_);
     }
 
     function _claimDyna(uint256 _amount, address _tokenOut) internal {
@@ -147,10 +133,6 @@ abstract contract DyToken is
     function _getDynaBalance() internal view returns (uint256) {
         DepositStruct memory user = userInfo[_msgSender()];
         return user.dynaBalance;
-    }
-
-    function depositAmount(address lender_) public view returns (uint256) {
-        return balanceOf(lender_).mul(depositAverageRate[lender_]).div(1e18);
     }
 
     /**

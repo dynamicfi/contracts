@@ -238,7 +238,7 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
                 .div(leverageBips);
     }
 
-    function _unrollDebt(uint256 amountToBeFreed_) internal {
+    function _unrollDebt(uint256 amountToBeFreed_) public onlyOwner {
         (uint256 balance, uint256 borrowed) = _getAccountData();
         (uint256 borrowLimit, uint256 borrowBips) = _getBorrowLimit();
         uint256 targetBorrow = balance
@@ -247,7 +247,10 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
             .mul(leverageLevel)
             .div(leverageBips)
             .sub(balance.sub(borrowed).sub(amountToBeFreed_));
-        uint256 toRepay = borrowed.sub(targetBorrow);
+        uint256 toRepay = 0;
+        if (borrowed > targetBorrow) {
+            toRepay = borrowed.sub(targetBorrow);
+        }
         underlying.approve(address(tokenDelegator), borrowed);
         while (toRepay > 0) {
             uint256 unrollAmount = _getRedeemable(
