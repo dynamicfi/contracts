@@ -137,6 +137,14 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
         redeemLimitSafetyMargin = redeemLimitSafetyMargin_;
     }
 
+    function updateMinimumBoundaries(
+        uint256 redeemLimitSafetyMargin_,
+        uint256 minMinting_
+    ) public onlyOwner {
+        minMinting = minMinting_;
+        redeemLimitSafetyMargin = redeemLimitSafetyMargin_;
+    }
+
     function _enterMarket() internal {
         address[] memory tokens = new address[](1);
         tokens[0] = address(tokenDelegator);
