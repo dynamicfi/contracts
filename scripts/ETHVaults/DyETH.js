@@ -19,7 +19,7 @@ async function main() {
   const dyETHVenus = await DyETHVenus.deploy(
     "Dynamic ETH",
     "DyETH",
-    "0x2073d38198511F5Ed8d893AB43A03bFDEae0b1A5", // cETH
+    "0x64078a6189Bf45f80091c6Ff2fCEe1B15Ac8dbde", // cETH
     "0x3cBe63aAcF6A064D32072a630A3eab7545C54d78", // Unitroller
     "0x3587b2F7E0E2D6166d6C14230e7Fe160252B0ba4", // compAddress
     "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", // WETH

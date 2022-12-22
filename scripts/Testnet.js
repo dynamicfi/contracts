@@ -15,7 +15,7 @@ async function main() {
 
   // We get the contract to deploy
   const TokenTestnet = await hre.ethers.getContractFactory("TestnetToken");
-  const tokenTestnet = await TokenTestnet.deploy("Chainlink Token", "LINK");
+  const tokenTestnet = await TokenTestnet.deploy("Wrap Ethereum", "WETH");
 
   await tokenTestnet.deployed();
 
