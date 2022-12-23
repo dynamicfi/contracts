@@ -40,7 +40,7 @@ contract Dynamic is ERC20, Ownable, ERC20Burnable {
         _mint(_msgSender(), _amount);
     }
 
-    function burn(uint256 _amount) public {
+    function burn(uint256 _amount) public override {
         _burn(_msgSender(), _amount);
     }
 
