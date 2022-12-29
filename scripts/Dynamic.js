@@ -16,8 +16,7 @@ async function main() {
   // We get the contract to deploy
   const Dynamic = await hre.ethers.getContractFactory("Dynamic");
   const dynamic = await Dynamic.deploy(
-    "400000000000000000000000",
-    "200000000000000000000000"
+    "400000000000000000000000"
   );
 
   await dynamic.deployed();

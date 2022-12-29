@@ -45,7 +45,7 @@ contract Dynamic is ERC20, Ownable, ERC20Burnable {
 
     function lock(uint256 _amount) public onlyOwner {
         totalLocked += _amount;
-        super.transferFrom(_msgSender(), address(this), _amount);
+        super.transfer(address(this), _amount);
         emit Lock(_amount);
     }
 
