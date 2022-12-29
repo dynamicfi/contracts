@@ -44,15 +44,15 @@ contract Dynamic is ERC20, Ownable, ERC20Burnable {
     }
 
     function lock(uint256 _amount) public onlyOwner {
-        super.transferFrom(_msgSender(), address(this), _amount);
         totalLocked += _amount;
+        super.transferFrom(_msgSender(), address(this), _amount);
         emit Lock(_amount);
     }
 
     function unlock(uint256 _amount) public onlyOwner {
         require(totalLocked >= _amount, "[DYNA]: Not enough token locked");
-        super.transfer(_msgSender(), _amount);
         totalLocked -= _amount;
+        super.transfer(_msgSender(), _amount);
         emit Unlock(_amount);
     }
 }
