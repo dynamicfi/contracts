@@ -18,7 +18,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
  */
 
 contract Dynamic is ERC20, Ownable, ERC20Burnable {
-    uint256 public totalLocked;
+    uint256 public totalLocked = 0;
+    uint256 public totalBurned = 0;
     uint256 public constant MAX_TOTAL_SUPPLY = 400000 * 10 ** 18;
 
     event Lock(uint256 amount);
@@ -33,13 +34,14 @@ contract Dynamic is ERC20, Ownable, ERC20Burnable {
     function mint(uint256 _amount) public onlyOwner {
         uint256 _totalSupply = totalSupply();
         require(
-            _totalSupply + _amount <= MAX_TOTAL_SUPPLY,
+            _totalSupply + _amount <= MAX_TOTAL_SUPPLY - totalBurned,
             "[DYNA]: Exceed maximum supply"
         );
         _mint(_msgSender(), _amount);
     }
 
     function burn(uint256 _amount) public override {
+        totalBurned += _amount;
         _burn(_msgSender(), _amount);
     }
 
@@ -52,7 +54,7 @@ contract Dynamic is ERC20, Ownable, ERC20Burnable {
     function unlock(uint256 _amount) public onlyOwner {
         require(totalLocked >= _amount, "[DYNA]: Not enough token locked");
         totalLocked -= _amount;
-        super.transfer(_msgSender(), _amount);
+        this.transfer(_msgSender(), _amount);
         emit Unlock(_amount);
     }
 }

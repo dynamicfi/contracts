@@ -53,9 +53,15 @@ module.exports = {
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
+    eth: {
+      url: "https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79",
+      chainId: 1,
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
     goerli: {
       // url: "https://goerli.infura.io/v3/43885af4abc848f0a04f9fdabd95ea43",
-      url: "https://goerli.infura.io/v3/daf3055db72a4cf5812e147fbc06ec1a",
+      url: "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
       chainId: 5,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
