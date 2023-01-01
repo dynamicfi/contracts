@@ -453,9 +453,11 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
     ) internal override {
         IERC20Upgradeable dyna = IERC20Upgradeable(DYNA);
         if (_tokenOut == DYNA) {
+            dyna.transferFrom(owner(), address(this), _amount);
             dyna.transfer(_receiver, _amount);
             return;
         }
+        dyna.transferFrom(owner(), address(this), _amount);
         dyna.approve(address(swapRouter), _amount);
         uint256 _deadline = block.timestamp + 3000;
 

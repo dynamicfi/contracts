@@ -446,9 +446,11 @@ contract DyBNBVenus is Ownable, DyETH {
     ) internal override {
         IERC20 dyna = IERC20(DYNA);
         if (_tokenOut == DYNA) {
+            dyna.transferFrom(owner(), address(this), _amount);
             dyna.transfer(_receiver, _amount);
             return;
         }
+        dyna.transferFrom(owner(), address(this), _amount);
         dyna.approve(address(pancakeRouter), _amount);
         uint256 _deadline = block.timestamp + 3000;
 

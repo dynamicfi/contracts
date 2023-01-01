@@ -29,7 +29,7 @@ async function main() {
     {
       leverageLevel: 15000,
       leverageBips: 10000,
-      minMinting: "100000000000000000", // 0.1 ETH
+      minMinting: "10000000000000000", // 0.01 ETH
     }
   );
 
