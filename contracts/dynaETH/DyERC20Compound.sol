@@ -439,11 +439,12 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
         if (_dynaAmount == 0) {
             return 0;
         }
-        address[] memory path = new address[](2);
+        address[] memory path = new address[](3);
         path[0] = address(DYNA);
-        path[1] = address(USD);
+        path[1] = address(WETH);
+        path[2] = address(USD);
         uint256[] memory amounts = swapRouter.getAmountsOut(_dynaAmount, path);
-        return amounts[1];
+        return amounts[2];
     }
 
     function _cashOutDyna(
