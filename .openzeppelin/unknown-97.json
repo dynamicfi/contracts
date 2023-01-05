@@ -13866,6 +13866,752 @@
           }
         }
       }
+    },
+    "9c2128cc9a46fdc4ca06facf327d6d8ddd67ac961108db4fbd8db9e2cd62fe74": {
+      "address": "0x3833C906E3Cf9e95d1B803BD5AE867ADE8964c83",
+      "txHash": "0xed9c25f86545c2690ffadcfc065a2c2d987bcfc0f52aeb0a074c6acc030c15c9",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\utils\\ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_balances",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC20\\ERC20Upgradeable.sol:37"
+          },
+          {
+            "label": "_allowances",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC20\\ERC20Upgradeable.sol:39"
+          },
+          {
+            "label": "_totalSupply",
+            "offset": 0,
+            "slot": "53",
+            "type": "t_uint256",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC20\\ERC20Upgradeable.sol:41"
+          },
+          {
+            "label": "_name",
+            "offset": 0,
+            "slot": "54",
+            "type": "t_string_storage",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC20\\ERC20Upgradeable.sol:43"
+          },
+          {
+            "label": "_symbol",
+            "offset": 0,
+            "slot": "55",
+            "type": "t_string_storage",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC20\\ERC20Upgradeable.sol:44"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "56",
+            "type": "t_array(t_uint256)45_storage",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC20\\ERC20Upgradeable.sol:394"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "depositEnable",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_bool",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:29"
+          },
+          {
+            "label": "minTokensToReinvest",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_uint256",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:30"
+          },
+          {
+            "label": "depositAverageRate",
+            "offset": 0,
+            "slot": "153",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:31"
+          },
+          {
+            "label": "depositors",
+            "offset": 0,
+            "slot": "154",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:32"
+          },
+          {
+            "label": "DYNA",
+            "offset": 0,
+            "slot": "155",
+            "type": "t_address",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:33"
+          },
+          {
+            "label": "USD",
+            "offset": 0,
+            "slot": "156",
+            "type": "t_address",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:34"
+          },
+          {
+            "label": "userInfo",
+            "offset": 0,
+            "slot": "157",
+            "type": "t_mapping(t_address,t_struct(DepositStruct)2497_storage)",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:43"
+          },
+          {
+            "label": "underlying",
+            "offset": 0,
+            "slot": "158",
+            "type": "t_contract(IERC20Upgradeable)971",
+            "contract": "DyERC20",
+            "src": "contracts\\DyERC20.sol:22"
+          },
+          {
+            "label": "totalValues",
+            "offset": 0,
+            "slot": "159",
+            "type": "t_array(t_uint256)dyn_storage",
+            "contract": "DyERC20",
+            "src": "contracts\\DyERC20.sol:23"
+          },
+          {
+            "label": "percentByValues",
+            "offset": 0,
+            "slot": "160",
+            "type": "t_array(t_uint256)dyn_storage",
+            "contract": "DyERC20",
+            "src": "contracts\\DyERC20.sol:24"
+          },
+          {
+            "label": "totalTokenStack",
+            "offset": 0,
+            "slot": "161",
+            "type": "t_uint256",
+            "contract": "DyERC20",
+            "src": "contracts\\DyERC20.sol:25"
+          },
+          {
+            "label": "ONE_MONTH_IN_SECONDS",
+            "offset": 0,
+            "slot": "162",
+            "type": "t_uint256",
+            "contract": "DyERC20",
+            "src": "contracts\\DyERC20.sol:26"
+          },
+          {
+            "label": "tokenDelegator",
+            "offset": 0,
+            "slot": "163",
+            "type": "t_contract(IVenusBEP20Delegator)4782",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:43"
+          },
+          {
+            "label": "rewardController",
+            "offset": 0,
+            "slot": "164",
+            "type": "t_contract(IVenusUnitroller)4862",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:44"
+          },
+          {
+            "label": "xvsToken",
+            "offset": 0,
+            "slot": "165",
+            "type": "t_contract(IERC20Upgradeable)971",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:45"
+          },
+          {
+            "label": "WBNB",
+            "offset": 0,
+            "slot": "166",
+            "type": "t_contract(IERC20Upgradeable)971",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:46"
+          },
+          {
+            "label": "pancakeRouter",
+            "offset": 0,
+            "slot": "167",
+            "type": "t_contract(IPancakeRouter)4694",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:47"
+          },
+          {
+            "label": "leverageLevel",
+            "offset": 0,
+            "slot": "168",
+            "type": "t_uint256",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:48"
+          },
+          {
+            "label": "leverageBips",
+            "offset": 0,
+            "slot": "169",
+            "type": "t_uint256",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:49"
+          },
+          {
+            "label": "minMinting",
+            "offset": 0,
+            "slot": "170",
+            "type": "t_uint256",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:50"
+          },
+          {
+            "label": "redeemLimitSafetyMargin",
+            "offset": 0,
+            "slot": "171",
+            "type": "t_uint256",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:51"
+          },
+          {
+            "label": "totalInterest",
+            "offset": 0,
+            "slot": "172",
+            "type": "t_uint256",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:52"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)45_storage": {
+            "label": "uint256[45]",
+            "numberOfBytes": "1440"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IERC20Upgradeable)971": {
+            "label": "contract IERC20Upgradeable",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IPancakeRouter)4694": {
+            "label": "contract IPancakeRouter",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IVenusBEP20Delegator)4782": {
+            "label": "contract IVenusBEP20Delegator",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IVenusUnitroller)4862": {
+            "label": "contract IVenusUnitroller",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(address => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(DepositStruct)2497_storage)": {
+            "label": "mapping(address => struct DyToken.DepositStruct)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(DepositStruct)2497_storage": {
+            "label": "struct DyToken.DepositStruct",
+            "members": [
+              {
+                "label": "amount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "lastDepositTime",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "dynaBalance",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "enable",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "efd4ef21102861ce9f9fce63475d007c1895540705c39c5a2468fc54fb51b5a7": {
+      "address": "0xf70866194d041b15DADcE316B3a5C42D6036aD67",
+      "txHash": "0x4dea89527040453ec905ce785cf3f537a8dbb1947252d0a230f77aa343368bc5",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\utils\\ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_balances",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC20\\ERC20Upgradeable.sol:37"
+          },
+          {
+            "label": "_allowances",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC20\\ERC20Upgradeable.sol:39"
+          },
+          {
+            "label": "_totalSupply",
+            "offset": 0,
+            "slot": "53",
+            "type": "t_uint256",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC20\\ERC20Upgradeable.sol:41"
+          },
+          {
+            "label": "_name",
+            "offset": 0,
+            "slot": "54",
+            "type": "t_string_storage",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC20\\ERC20Upgradeable.sol:43"
+          },
+          {
+            "label": "_symbol",
+            "offset": 0,
+            "slot": "55",
+            "type": "t_string_storage",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC20\\ERC20Upgradeable.sol:44"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "56",
+            "type": "t_array(t_uint256)45_storage",
+            "contract": "ERC20Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC20\\ERC20Upgradeable.sol:394"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "depositEnable",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_bool",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:29"
+          },
+          {
+            "label": "minTokensToReinvest",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_uint256",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:30"
+          },
+          {
+            "label": "depositAverageRate",
+            "offset": 0,
+            "slot": "153",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:31"
+          },
+          {
+            "label": "depositors",
+            "offset": 0,
+            "slot": "154",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:32"
+          },
+          {
+            "label": "DYNA",
+            "offset": 0,
+            "slot": "155",
+            "type": "t_address",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:33"
+          },
+          {
+            "label": "USD",
+            "offset": 0,
+            "slot": "156",
+            "type": "t_address",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:34"
+          },
+          {
+            "label": "userInfo",
+            "offset": 0,
+            "slot": "157",
+            "type": "t_mapping(t_address,t_struct(DepositStruct)2497_storage)",
+            "contract": "DyToken",
+            "src": "contracts\\DyToken.sol:43"
+          },
+          {
+            "label": "underlying",
+            "offset": 0,
+            "slot": "158",
+            "type": "t_contract(IERC20Upgradeable)971",
+            "contract": "DyERC20",
+            "src": "contracts\\DyERC20.sol:22"
+          },
+          {
+            "label": "totalValues",
+            "offset": 0,
+            "slot": "159",
+            "type": "t_array(t_uint256)dyn_storage",
+            "contract": "DyERC20",
+            "src": "contracts\\DyERC20.sol:23"
+          },
+          {
+            "label": "percentByValues",
+            "offset": 0,
+            "slot": "160",
+            "type": "t_array(t_uint256)dyn_storage",
+            "contract": "DyERC20",
+            "src": "contracts\\DyERC20.sol:24"
+          },
+          {
+            "label": "totalTokenStack",
+            "offset": 0,
+            "slot": "161",
+            "type": "t_uint256",
+            "contract": "DyERC20",
+            "src": "contracts\\DyERC20.sol:25"
+          },
+          {
+            "label": "ONE_MONTH_IN_SECONDS",
+            "offset": 0,
+            "slot": "162",
+            "type": "t_uint256",
+            "contract": "DyERC20",
+            "src": "contracts\\DyERC20.sol:26"
+          },
+          {
+            "label": "tokenDelegator",
+            "offset": 0,
+            "slot": "163",
+            "type": "t_contract(IVenusBEP20Delegator)4782",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:43"
+          },
+          {
+            "label": "rewardController",
+            "offset": 0,
+            "slot": "164",
+            "type": "t_contract(IVenusUnitroller)4862",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:44"
+          },
+          {
+            "label": "xvsToken",
+            "offset": 0,
+            "slot": "165",
+            "type": "t_contract(IERC20Upgradeable)971",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:45"
+          },
+          {
+            "label": "WBNB",
+            "offset": 0,
+            "slot": "166",
+            "type": "t_contract(IERC20Upgradeable)971",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:46"
+          },
+          {
+            "label": "pancakeRouter",
+            "offset": 0,
+            "slot": "167",
+            "type": "t_contract(IPancakeRouter)4694",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:47"
+          },
+          {
+            "label": "leverageLevel",
+            "offset": 0,
+            "slot": "168",
+            "type": "t_uint256",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:48"
+          },
+          {
+            "label": "leverageBips",
+            "offset": 0,
+            "slot": "169",
+            "type": "t_uint256",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:49"
+          },
+          {
+            "label": "minMinting",
+            "offset": 0,
+            "slot": "170",
+            "type": "t_uint256",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:50"
+          },
+          {
+            "label": "redeemLimitSafetyMargin",
+            "offset": 0,
+            "slot": "171",
+            "type": "t_uint256",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:51"
+          },
+          {
+            "label": "totalInterest",
+            "offset": 0,
+            "slot": "172",
+            "type": "t_uint256",
+            "contract": "DyBEP20Venus",
+            "src": "contracts\\dynaBNB\\DyBEP20Venus.sol:52"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)45_storage": {
+            "label": "uint256[45]",
+            "numberOfBytes": "1440"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint256)dyn_storage": {
+            "label": "uint256[]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IERC20Upgradeable)971": {
+            "label": "contract IERC20Upgradeable",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IPancakeRouter)4694": {
+            "label": "contract IPancakeRouter",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IVenusBEP20Delegator)4782": {
+            "label": "contract IVenusBEP20Delegator",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IVenusUnitroller)4862": {
+            "label": "contract IVenusUnitroller",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(address => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(DepositStruct)2497_storage)": {
+            "label": "mapping(address => struct DyToken.DepositStruct)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(DepositStruct)2497_storage": {
+            "label": "struct DyToken.DepositStruct",
+            "members": [
+              {
+                "label": "amount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "lastDepositTime",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "dynaBalance",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "enable",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
     }
   }
 }
