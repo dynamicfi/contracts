@@ -388,7 +388,7 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
                 totalProduct +
                 (user.amount * stackingPeriod * APY) /
                 (ONE_MONTH_IN_SECONDS * 1000);
-            user.dynaBalance += (interest * 88) / 100; // 12 % performance fee
+            user.dynaBalance += (interest * 90) / 100; // 12 % performance fee
             user.lastDepositTime = block.timestamp;
             emit TrackingUserInterest(depositors[i], interest);
         }
