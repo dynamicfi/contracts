@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IPancakePair.sol";
 import "./interfaces/IPancakeRouter.sol";
 
+// @dev This contract is for staking LP tokens of an ERC20 token 
+// which paired with another token
 contract StakingLP3 is Ownable {
     using SafeMath for uint256;
     using SafeMath for uint112;
@@ -147,12 +149,15 @@ contract StakingLP3 is Ownable {
         uint256 claimAmount = interest.mul(_redeemAmount).div(
             stakeDetail.principal
         );
-        uint256 claimAmountInToken = claimAmount.mul(getPairPrice()).div(1e18).add(
-            stakeDetail.pendingReward
-        );
+        uint256 claimAmountInToken = claimAmount
+            .mul(getPairPrice())
+            .div(1e18)
+            .add(stakeDetail.pendingReward);
 
         uint256 remainAmount = interest.sub(claimAmount);
-        uint256 remainAmountInToken = remainAmount.mul(getPairPrice()).div(1e18);
+        uint256 remainAmountInToken = remainAmount.mul(getPairPrice()).div(
+            1e18
+        );
 
         stakeDetail.lastProcessAt = block.timestamp;
         require(

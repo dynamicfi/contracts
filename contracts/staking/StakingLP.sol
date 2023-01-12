@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IPancakePair.sol";
 import "./interfaces/IPancakeRouter.sol";
 
+/// @dev This contract is for staking LP tokens of an ERC20 token
+/// with stake, withdraw, claim functions
 contract StakingLP is Ownable {
     using SafeMath for uint256;
     using SafeMath for uint112;

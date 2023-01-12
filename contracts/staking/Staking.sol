@@ -6,6 +6,9 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+/// @dev This contract is for staking single ERC20 token
+/// with stake, claim and withdraw functions
+
 contract Staking is Ownable {
     using SafeMath for uint256;
     using SafeMath for uint112;
