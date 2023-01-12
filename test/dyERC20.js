@@ -9,7 +9,11 @@ describe("DyERC20", function () {
     const [addr1, addr2] = await ethers.getSigners();
 
     const testToken = await TestToken.deploy();
-    const dyErc20 = await DyERC20.deploy(testToken.address, "dyTestToken", "dyTestToken");
+    const dyErc20 = await DyERC20.deploy(
+      testToken.address,
+      "dyTestToken",
+      "dyTestToken"
+    );
     await dyErc20.deployed();
 
     const amountDeposit = "10000000000000000000";
@@ -19,7 +23,7 @@ describe("DyERC20", function () {
 
     expect(await testToken.balanceOf(dyErc20.address)).to.equal(amountDeposit);
     expect(await dyErc20.balanceOf(addr1.address)).to.equal(amountDeposit);
-    
+
     // await testToken.connect(addr1).transfer(dyErc20.address, amountDeposit);
     // await testToken.connect(addr1).transfer(addr2.address, amountDeposit);
 

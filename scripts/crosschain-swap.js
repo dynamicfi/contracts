@@ -4,6 +4,7 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
+const { upgrades } = require("hardhat");
 require("dotenv").config();
 
 async function main() {
@@ -16,13 +17,13 @@ async function main() {
 
   // We get the contract to deploy
   const CrossChain = await hre.ethers.getContractFactory("CrossChain");
-  const crossChain = await CrossChain.deploy(
-    process.env.CBRIDGE_ROUTER,
-    process.env.FEE,
-    process.env.UNISWAP_V2_ROUTER,
-    process.env.WETH,
-  );
-  // hre.ethers.
+
+  const crossChain = await upgrades.deployProxy(CrossChain, [
+    "500", // fee
+    "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D", // Router address
+    "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", // WETH
+  ]);
+
   await crossChain.deployed();
   console.log("dynamic CrossChain deployed to:", crossChain.address);
 }
