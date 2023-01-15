@@ -59,7 +59,6 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
         address rewardController_,
         address compAddress_,
         address WETH_,
-        address DYNA_,
         address USD_,
         address swapRouter_,
         LeverageSettings memory leverageSettings_
@@ -71,7 +70,6 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
         minMinting = leverageSettings_.minMinting;
         compToken = IERC20Upgradeable(compAddress_);
         WETH = IERC20Upgradeable(WETH_);
-        DYNA = DYNA_;
         USD = USD_;
         swapRouter = ISwapRouter(swapRouter_);
         _updateLeverage(
@@ -297,16 +295,17 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
     function _reinvest(bool userDeposit) private {
         address[] memory markets = new address[](1);
         markets[0] = address(tokenDelegator);
-        uint256 dynaReward = distributeReward();
-        totalInterest += dynaReward;
+        uint256 reward = distributeReward();
+        totalInterest += reward;
         rewardController.claimComp(address(this), markets);
 
         uint256 compBalance = compToken.balanceOf(address(this));
         if (compBalance > 0) {
             compToken.approve(address(swapRouter), compBalance);
-            address[] memory path = new address[](2);
+            address[] memory path = new address[](3);
             path[0] = address(compToken);
-            path[1] = address(DYNA);
+            path[1] = address(WETH);
+            path[2] = address(underlying);
             uint256 _deadline = block.timestamp + 3000;
             swapRouter.swapExactTokensForTokens(
                 compBalance,
@@ -317,7 +316,7 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
             );
         }
 
-        _distributeDynaByAmount(dynaReward);
+        _distributeRewardByAmount(reward);
 
         uint256 amount = underlying.balanceOf(address(this));
         if (!userDeposit) {
@@ -328,7 +327,7 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
         }
 
         emit Reinvest(totalDeposits(), totalSupply());
-        emit TrackingInterest(block.timestamp, dynaReward);
+        emit TrackingInterest(block.timestamp, reward);
     }
 
     function getActualLeverage() public view returns (uint256) {
@@ -371,24 +370,25 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
         if (compRewards == 0) {
             return 0;
         }
-        address[] memory path = new address[](2);
+        address[] memory path = new address[](3);
         path[0] = address(compToken);
-        path[1] = address(DYNA);
+        path[1] = address(WETH);
+        path[2] = address(underlying);
         uint256[] memory amounts = swapRouter.getAmountsOut(compRewards, path);
-        return amounts[1];
+        return amounts[2];
     }
 
-    function _distributeDynaByAmount(uint256 _dynaAmount) internal {
+    function _distributeRewardByAmount(uint256 _rewardAmount) internal {
         uint256 totalProduct = _calculateTotalProduct();
         for (uint256 i = 0; i < depositors.length; i++) {
             DepositStruct storage user = userInfo[depositors[i]];
             uint256 stackingPeriod = block.timestamp - user.lastDepositTime;
             uint256 APY = _getAPYValue();
-            uint256 interest = (_dynaAmount * user.amount * stackingPeriod) /
+            uint256 interest = (_rewardAmount * user.amount * stackingPeriod) /
                 totalProduct +
                 (user.amount * stackingPeriod * APY) /
                 (ONE_MONTH_IN_SECONDS * 1000);
-            user.dynaBalance += (interest * 90) / 100; // 12 % performance fee
+            user.rewardBalance += (interest * 90) / 100; // 12 % performance fee
             user.lastDepositTime = block.timestamp;
             emit TrackingUserInterest(depositors[i], interest);
         }
@@ -431,62 +431,62 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
         return amounts[1];
     }
 
-    function _getDynaPriceInDollar(uint256 _dynaAmount)
-        public
-        view
-        returns (uint256)
-    {
-        if (_dynaAmount == 0) {
-            return 0;
-        }
-        address[] memory path = new address[](3);
-        path[0] = address(DYNA);
-        path[1] = address(WETH);
-        path[2] = address(USD);
-        uint256[] memory amounts = swapRouter.getAmountsOut(_dynaAmount, path);
-        return amounts[2];
-    }
+    // function _getDynaPriceInDollar(uint256 _dynaAmount)
+    //     public
+    //     view
+    //     returns (uint256)
+    // {
+    //     if (_dynaAmount == 0) {
+    //         return 0;
+    //     }
+    //     address[] memory path = new address[](3);
+    //     path[0] = address(DYNA);
+    //     path[1] = address(WETH);
+    //     path[2] = address(USD);
+    //     uint256[] memory amounts = swapRouter.getAmountsOut(_dynaAmount, path);
+    //     return amounts[2];
+    // }
 
-    function _cashOutDyna(
-        address _receiver,
-        uint256 _amount,
-        address _tokenOut
-    ) internal override {
-        IERC20Upgradeable dyna = IERC20Upgradeable(DYNA);
-        if (_tokenOut == DYNA) {
-            dyna.transferFrom(owner(), address(this), _amount);
-            dyna.transfer(_receiver, _amount);
-            return;
-        }
-        dyna.transferFrom(owner(), address(this), _amount);
-        dyna.approve(address(swapRouter), _amount);
-        uint256 _deadline = block.timestamp + 3000;
+    // function _cashOutDyna(
+    //     address _receiver,
+    //     uint256 _amount,
+    //     address _tokenOut
+    // ) internal override {
+    //     IERC20Upgradeable dyna = IERC20Upgradeable(DYNA);
+    //     if (_tokenOut == DYNA) {
+    //         dyna.transferFrom(owner(), address(this), _amount);
+    //         dyna.transfer(_receiver, _amount);
+    //         return;
+    //     }
+    //     dyna.transferFrom(owner(), address(this), _amount);
+    //     dyna.approve(address(swapRouter), _amount);
+    //     uint256 _deadline = block.timestamp + 3000;
 
-        if (_tokenOut == address(WETH)) {
-            address[] memory path = new address[](2);
-            path[0] = address(DYNA);
-            path[1] = address(WETH);
+    //     if (_tokenOut == address(WETH)) {
+    //         address[] memory path = new address[](2);
+    //         path[0] = address(DYNA);
+    //         path[1] = address(WETH);
 
-            swapRouter.swapExactTokensForTokens(
-                _amount,
-                0,
-                path,
-                _receiver,
-                _deadline
-            );
-        } else {
-            address[] memory path = new address[](3);
-            path[0] = address(DYNA);
-            path[1] = address(WETH);
-            path[2] = _tokenOut;
+    //         swapRouter.swapExactTokensForTokens(
+    //             _amount,
+    //             0,
+    //             path,
+    //             _receiver,
+    //             _deadline
+    //         );
+    //     } else {
+    //         address[] memory path = new address[](3);
+    //         path[0] = address(DYNA);
+    //         path[1] = address(WETH);
+    //         path[2] = _tokenOut;
 
-            swapRouter.swapExactTokensForTokens(
-                _amount,
-                0,
-                path,
-                _receiver,
-                _deadline
-            );
-        }
-    }
+    //         swapRouter.swapExactTokensForTokens(
+    //             _amount,
+    //             0,
+    //             path,
+    //             _receiver,
+    //             _deadline
+    //         );
+    //     }
+    // }
 }

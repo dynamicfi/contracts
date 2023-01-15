@@ -30,13 +30,12 @@ abstract contract DyToken is
     uint256 public minTokensToReinvest;
     mapping(address => uint256) public depositAverageRate;
     address[] public depositors;
-    address public DYNA;
     address public USD;
 
     struct DepositStruct {
         uint256 amount;
         uint256 lastDepositTime;
-        uint256 dynaBalance;
+        uint256 rewardBalance;
         bool enable;
     }
 
@@ -137,16 +136,16 @@ abstract contract DyToken is
         _doTransferOut(payable(_msgSender()), amount_);
     }
 
-    function _claimDyna(uint256 _amount, address _tokenOut) internal {
-        DepositStruct storage user = userInfo[_msgSender()];
-        require(user.dynaBalance >= _amount, "DyToken::not enough balance");
-        user.dynaBalance -= _amount;
-        _cashOutDyna(_msgSender(), _amount, _tokenOut);
-    }
+    // function _claimDyna(uint256 _amount, address _tokenOut) internal {
+    //     DepositStruct storage user = userInfo[_msgSender()];
+    //     require(user.dynaBalance >= _amount, "DyToken::not enough balance");
+    //     user.dynaBalance -= _amount;
+    //     _cashOutDyna(_msgSender(), _amount, _tokenOut);
+    // }
 
-    function _getDynaBalance() internal view returns (uint256) {
+    function _getRewardBalance() internal view returns (uint256) {
         DepositStruct memory user = userInfo[_msgSender()];
-        return user.dynaBalance;
+        return user.rewardBalance;
     }
 
     function depositAmount(address lender_) public view returns (uint256) {
@@ -195,9 +194,9 @@ abstract contract DyToken is
      * @param _amount: Amount of Dyna want to cash out
      * @param _tokenOut: The address of token want to swap out from Dyna
      */
-    function _cashOutDyna(
-        address _receiver,
-        uint256 _amount,
-        address _tokenOut
-    ) internal virtual;
+    // function _cashOutDyna(
+    //     address _receiver,
+    //     uint256 _amount,
+    //     address _tokenOut
+    // ) internal virtual;
 }

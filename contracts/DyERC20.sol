@@ -64,13 +64,13 @@ abstract contract DyERC20 is DyToken {
         _withdraw(amount_);
     }
 
-    function claimDyna(uint256 amount_, address _tokenOut) external {
-        _claimDyna(amount_, _tokenOut);
-    }
+    // function claimDyna(uint256 amount_, address _tokenOut) external {
+    //     _claimDyna(amount_, _tokenOut);
+    // }
 
-    function getDyna() external view returns (uint256) {
-        return _getDynaBalance();
-    }
+    // function getDyna() external view returns (uint256) {
+    //     return _getDynaBalance();
+    // }
 
     function _doTransferIn(address from_, uint256 amount_)
         internal
