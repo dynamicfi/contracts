@@ -410,7 +410,7 @@ contract DyBNBVenus is Ownable, DyETH {
             return 0;
         }
         address[] memory path = new address[](2);
-        path[0] = address(xvsToken);
+        path[0] = address(WBNB);
         path[1] = address(USD);
         uint256[] memory amounts = pancakeRouter.getAmountsOut(
             totalTokenStack,

@@ -408,7 +408,7 @@ contract DyETHCompound is Ownable, DyETH {
             return 0;
         }
         address[] memory path = new address[](2);
-        path[0] = address(compToken);
+        path[0] = address(WETH);
         path[1] = address(USD);
         uint256[] memory amounts = swapRouter.getAmountsOut(
             totalTokenStack,

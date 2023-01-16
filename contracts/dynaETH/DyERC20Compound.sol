@@ -421,8 +421,11 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
         if (totalTokenStack == 0) {
             return 0;
         }
+        if (address(underlying) == USD) {
+            return totalTokenStack;
+        }
         address[] memory path = new address[](2);
-        path[0] = address(compToken);
+        path[0] = address(underlying);
         path[1] = address(USD);
         uint256[] memory amounts = swapRouter.getAmountsOut(
             totalTokenStack,
