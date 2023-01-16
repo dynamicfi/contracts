@@ -34,6 +34,13 @@ contract DyETHCompound is Ownable, DyETH {
         uint256 minMinting;
     }
 
+    struct BorrowBalance {
+        uint256 supply;
+        uint256 loan;
+    }
+
+    mapping(address => BorrowBalance) public userBorrow;
+
     event TrackingDeposit(uint256 amount, uint256 usdt);
     event TrackingUserDeposit(address user, uint256 amount);
     event TrackingWithdraw(uint256 amount, uint256 usdt);
@@ -95,16 +102,18 @@ contract DyETHCompound is Ownable, DyETH {
         (
             ,
             uint256 internalBalance,
-            uint256 borrow,
+            uint256 borrowAmount,
             uint256 exchangeRate
         ) = tokenDelegator.getAccountSnapshot(address(this));
-        return internalBalance.mul(exchangeRate).div(1e18).sub(borrow);
+        return internalBalance.mul(exchangeRate).div(1e18).sub(borrowAmount);
     }
 
     function _totalDepositsFresh() internal override returns (uint256) {
-        uint256 borrow = tokenDelegator.borrowBalanceCurrent(address(this));
+        uint256 borrowAmount = tokenDelegator.borrowBalanceCurrent(
+            address(this)
+        );
         uint256 balance = tokenDelegator.balanceOfUnderlying(address(this));
-        return balance.sub(borrow);
+        return balance.sub(borrowAmount);
     }
 
     function updateLeverage(
@@ -276,11 +285,11 @@ contract DyETHCompound is Ownable, DyETH {
         (
             ,
             uint256 internalBalance,
-            uint256 borrow,
+            uint256 borrowAmount,
             uint256 exchangeRate
         ) = tokenDelegator.getAccountSnapshot(address(this));
         uint256 balance = internalBalance.mul(exchangeRate).div(1e18);
-        return balance.mul(1e18).div(balance.sub(borrow));
+        return balance.mul(1e18).div(balance.sub(borrowAmount));
     }
 
     function reinvest() external nonReentrant {
@@ -415,6 +424,30 @@ contract DyETHCompound is Ownable, DyETH {
             path
         );
         return amounts[1];
+    }
+
+    function supplyCollateral(uint256 _amount) public payable {
+        tokenDelegator.mint{value: _amount}();
+
+        BorrowBalance storage userBorrowBalance = userBorrow[msg.sender];
+        userBorrowBalance.supply += _amount;
+    }
+
+    function borrow(uint256 _amount) public {
+        BorrowBalance storage userBorrowBalance = userBorrow[msg.sender];
+        require(
+            tokenDelegator.borrow(_amount) == 0,
+            "DyETHCompound::Borrowing failed"
+        );
+
+        userBorrowBalance.loan += _amount;
+    }
+
+    function repay(uint256 _amount) public payable {
+        BorrowBalance storage userBorrowBalance = userBorrow[msg.sender];
+        tokenDelegator.repayBorrow{value: _amount}();
+
+        userBorrowBalance.loan -= _amount;
     }
 
     // function _getDynaPriceInDollar(uint256 _dynaAmount)
