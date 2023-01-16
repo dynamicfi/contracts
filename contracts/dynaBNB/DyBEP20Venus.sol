@@ -33,6 +33,13 @@ contract DyBEP20Venus is Initializable, OwnableUpgradeable, DyERC20 {
         uint256 minMinting;
     }
 
+    struct BorrowBalance {
+        uint256 supply;
+        uint256 loan;
+    }
+
+    mapping(address => BorrowBalance) public userBorrow;
+
     event TrackingDeposit(uint256 amount, uint256 usdt);
     event TrackingUserDeposit(address user, uint256 amount);
     event TrackingWithdraw(uint256 amount, uint256 usdt);
@@ -436,9 +443,37 @@ contract DyBEP20Venus is Initializable, OwnableUpgradeable, DyERC20 {
         return amounts[1];
     }
 
-    function borrow(uint256 _amount) public {}
+    function supplyCollateral(uint256 _amount) public {
+        underlying.transferFrom(_msgSender(), address(this), _amount);
+        underlying.approve(address(tokenDelegator), _amount);
+        require(
+            tokenDelegator.mint(_amount) == 0,
+            "DyBEP20Venus::Supplying failed"
+        );
 
-    function repay(uint256 _amount) public {}
+        BorrowBalance storage userBorrowBalance = userBorrow[msg.sender];
+        userBorrowBalance.supply += _amount;
+    }
+
+    function borrow(uint256 _amount) public {
+        BorrowBalance storage userBorrowBalance = userBorrow[msg.sender];
+        require(
+            tokenDelegator.borrow(_amount) == 0,
+            "DyBEP20Venus::Borrowing failed"
+        );
+
+        userBorrowBalance.loan += _amount;
+    }
+
+    function repay(uint256 _amount) public {
+        BorrowBalance storage userBorrowBalance = userBorrow[msg.sender];
+        require(
+            tokenDelegator.repayBorrow(_amount) == 0,
+            "DyBEP20Venus::Repay failed"
+        );
+
+        userBorrowBalance.loan -= _amount;
+    }
 
     // function _getDynaPriceInDollar(uint256 _dynaAmount)
     //     public
