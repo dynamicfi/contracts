@@ -22,7 +22,7 @@ contract CrossChain is Initializable, OwnableUpgradeable {
     // variables and mappings
     using SafeMath for uint256;
     uint256 public constant DIVIDER = 10000;
-    uint256 public swapTimeout = 900;
+    uint256 public swapTimeout;
     uint256 public fee;
     address public router;
     address public weth;
@@ -45,6 +45,7 @@ contract CrossChain is Initializable, OwnableUpgradeable {
         fee = _fee;
         router = _router;
         weth = _weth;
+        swapTimeout = 900;
     }
 
     function updateSwapTimeout(uint256 _swapTimeout) public onlyOwner {
