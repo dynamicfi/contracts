@@ -20,8 +20,8 @@ async function main() {
 
   const crossChain = await upgrades.deployProxy(CrossChain, [
     "20", // fee
-    "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D", // Router address
-    "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", // WETH
+    "0x10ED43C718714eb63d5aA57B78B54704E256024E", // Router address
+    "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", // WBNB
   ]);
 
   await crossChain.deployed();

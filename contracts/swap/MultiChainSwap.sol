@@ -21,11 +21,11 @@ import "./SafeMath.sol";
 contract CrossChain is Initializable, OwnableUpgradeable {
     // variables and mappings
     using SafeMath for uint256;
-    uint256 constant divider = 10000;
-    uint256 constant swapTimeout = 900;
+    uint256 public constant DIVIDER = 10000;
+    uint256 public swapTimeout = 900;
     uint256 public fee;
-    address public router; // 0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3
-    address public WETH;
+    address public router;
+    address public weth;
     mapping(address => bool) public zeroFee;
 
     // structs and events
@@ -42,9 +42,13 @@ contract CrossChain is Initializable, OwnableUpgradeable {
         address _weth
     ) public initializer {
         __Ownable_init();
-        router = _router;
         fee = _fee;
-        WETH = _weth;
+        router = _router;
+        weth = _weth;
+    }
+
+    function updateSwapTimeout(uint256 _swapTimeout) public onlyOwner {
+        swapTimeout = _swapTimeout;
     }
 
     function updateFee(uint256 _fee) public onlyOwner {
@@ -79,7 +83,7 @@ contract CrossChain is Initializable, OwnableUpgradeable {
         if (msg.value > 0) {
             require(msg.value == _amountIn, "Invalid input");
             if (!zeroFee[msg.sender] && fee > 0) {
-                uint256 totalFee = (fee * _amountIn) / divider;
+                uint256 totalFee = (fee * _amountIn) / DIVIDER;
                 remainingAmount = remainingAmount.sub(totalFee);
             }
             if (_tokenFrom == _tokenTo) {
@@ -94,7 +98,7 @@ contract CrossChain is Initializable, OwnableUpgradeable {
             appove(router, _tokenFrom, remainingAmount);
             address[] memory path;
             path = new address[](2);
-            path[0] = WETH;
+            path[0] = weth;
             path[1] = _tokenTo;
             uint256[] memory amt = IUniswapV2Router(router).getAmountsOut(
                 remainingAmount,
@@ -120,7 +124,7 @@ contract CrossChain is Initializable, OwnableUpgradeable {
             );
             require(result, "[DYNA]: Token transfer fail");
             if (!zeroFee[msg.sender] && fee > 0) {
-                uint256 totalFee = (fee * _amountIn) / divider;
+                uint256 totalFee = (fee * _amountIn) / DIVIDER;
                 remainingAmount = remainingAmount.sub(totalFee);
             }
             if (_tokenFrom == _tokenTo) {
@@ -135,14 +139,14 @@ contract CrossChain is Initializable, OwnableUpgradeable {
             appove(router, _tokenFrom, remainingAmount);
             if (_tokenFrom != _tokenTo) {
                 address[] memory path;
-                if (_tokenFrom == WETH || _tokenTo == WETH) {
+                if (_tokenFrom == weth || _tokenTo == weth) {
                     path = new address[](2);
                     path[0] = _tokenFrom;
                     path[1] = _tokenTo;
                 } else {
                     path = new address[](3);
                     path[0] = _tokenFrom;
-                    path[1] = WETH;
+                    path[1] = weth;
                     path[2] = _tokenTo;
                 }
 
@@ -179,7 +183,7 @@ contract CrossChain is Initializable, OwnableUpgradeable {
         if (msg.value > 0) {
             address[] memory path;
             path = new address[](2);
-            path[0] = WETH;
+            path[0] = weth;
             path[1] = _tokenTo;
             uint256[] memory amt = IUniswapV2Router(router).getAmountsOut(
                 _amountIn,
@@ -206,14 +210,14 @@ contract CrossChain is Initializable, OwnableUpgradeable {
             require(result, "[DYNA]: Token transfer fail");
             appove(router, _tokenFrom, _amountIn);
             address[] memory path;
-            if (_tokenFrom == WETH || _tokenTo == WETH) {
+            if (_tokenFrom == weth || _tokenTo == weth) {
                 path = new address[](2);
                 path[0] = _tokenFrom;
                 path[1] = _tokenTo;
             } else {
                 path = new address[](3);
                 path[0] = _tokenFrom;
-                path[1] = WETH;
+                path[1] = weth;
                 path[2] = _tokenTo;
             }
 
@@ -261,14 +265,14 @@ contract CrossChain is Initializable, OwnableUpgradeable {
         uint256 _amountIn
     ) public view returns (uint256) {
         address[] memory path;
-        if (_tokenFrom == WETH || _tokenTo == WETH) {
+        if (_tokenFrom == weth || _tokenTo == weth) {
             path = new address[](2);
             path[0] = _tokenFrom;
             path[1] = _tokenTo;
         } else {
             path = new address[](3);
             path[0] = _tokenFrom;
-            path[1] = WETH;
+            path[1] = weth;
             path[2] = _tokenTo;
         }
         uint256[] memory amt = IUniswapV2Router(router).getAmountsOut(
