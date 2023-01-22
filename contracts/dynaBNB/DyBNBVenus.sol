@@ -86,6 +86,11 @@ contract DyBNBVenus is Ownable, DyETH {
 
     function withdraw(uint256 amount_) public override(DyETH) {
         super.withdraw(amount_);
+        DepositStruct storage user = userInfo[_msgSender()];
+        uint256 reward = user.rewardBalance;
+        user.rewardBalance = 0;
+        (bool success, ) = _msgSender().call{value: reward}("");
+        require(success, "Transfer ETH failed");
         emit TrackingWithdraw(amount_, _getVaultValueInDollar());
         emit TrackingUserWithdraw(_msgSender(), amount_);
     }
@@ -376,7 +381,7 @@ contract DyBNBVenus is Ownable, DyETH {
                 totalProduct +
                 (user.amount * stackingPeriod * APY) /
                 (ONE_MONTH_IN_SECONDS * 1000);
-            user.rewardBalance += (interest * 90) / 100; // 12 % performance fee
+            user.rewardBalance += (interest * 90) / 100; // 10 % performance fee
             user.lastDepositTime = block.timestamp;
             emit TrackingUserInterest(depositors[i], interest);
         }
