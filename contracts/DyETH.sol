@@ -30,7 +30,7 @@ abstract contract DyETH is DyTokenNonUpgradeable, ReentrancyGuard {
         DyTokenNonUpgradeable(name_, symbol_)
     {
         totalValues = [0, 1000000, 10000000, 100000000, 1000000000]; // for total value in dollar
-        percentByValues = [80, 65, 50, 35, 20];
+        percentByValues = [6, 5, 5, 5, 2];
         totalTokenStack = 0;
         ONE_MONTH_IN_SECONDS = 30 days;
     }

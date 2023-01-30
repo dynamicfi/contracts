@@ -96,6 +96,10 @@ contract DyBEP20Venus is Initializable, OwnableUpgradeable, DyERC20 {
 
     function withdraw(uint256 amount_) public override(DyERC20) {
         super.withdraw(amount_);
+        DepositStruct storage user = userInfo[_msgSender()];
+        uint256 reward = user.rewardBalance;
+        user.rewardBalance = 0;
+        underlying.transferFrom(address(this), _msgSender(), reward);
         emit TrackingWithdraw(amount_, _getVaultValueInDollar());
         emit TrackingUserWithdraw(_msgSender(), amount_);
     }
@@ -400,7 +404,7 @@ contract DyBEP20Venus is Initializable, OwnableUpgradeable, DyERC20 {
                 totalProduct +
                 (user.amount * stackingPeriod * APY) /
                 (ONE_MONTH_IN_SECONDS * 1000);
-            user.rewardBalance += (interest * 90) / 100; // 12 % performance fee
+            user.rewardBalance += (interest * 90) / 100; // 10 % performance fee
             user.lastDepositTime = block.timestamp;
             emit TrackingUserInterest(depositors[i], interest);
         }
@@ -433,8 +437,11 @@ contract DyBEP20Venus is Initializable, OwnableUpgradeable, DyERC20 {
         if (totalTokenStack == 0) {
             return 0;
         }
+        if (address(underlying) == USD) {
+            return totalTokenStack;
+        }
         address[] memory path = new address[](2);
-        path[0] = address(xvsToken);
+        path[0] = address(underlying);
         path[1] = address(USD);
         uint256[] memory amounts = pancakeRouter.getAmountsOut(
             totalTokenStack,

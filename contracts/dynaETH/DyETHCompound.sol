@@ -88,6 +88,11 @@ contract DyETHCompound is Ownable, DyETH {
 
     function deposit(uint256 amountUnderlying_) public payable override(DyETH) {
         super.deposit(amountUnderlying_);
+        DepositStruct storage user = userInfo[_msgSender()];
+        uint256 reward = user.rewardBalance;
+        user.rewardBalance = 0;
+        (bool success, ) = _msgSender().call{value: reward}("");
+        require(success, "Transfer ETH failed");
         emit TrackingDeposit(amountUnderlying_, _getVaultValueInDollar());
         emit TrackingUserDeposit(_msgSender(), amountUnderlying_);
     }
@@ -383,7 +388,7 @@ contract DyETHCompound is Ownable, DyETH {
                 totalProduct +
                 (user.amount * stackingPeriod * APY) /
                 (ONE_MONTH_IN_SECONDS * 1000);
-            user.rewardBalance += (interest * 90) / 100; // 12 % performance fee
+            user.rewardBalance += (interest * 90) / 100; // 10 % performance fee
             user.lastDepositTime = block.timestamp;
             emit TrackingUserInterest(depositors[i], interest);
         }
@@ -417,7 +422,7 @@ contract DyETHCompound is Ownable, DyETH {
             return 0;
         }
         address[] memory path = new address[](2);
-        path[0] = address(compToken);
+        path[0] = address(WETH);
         path[1] = address(USD);
         uint256[] memory amounts = swapRouter.getAmountsOut(
             totalTokenStack,

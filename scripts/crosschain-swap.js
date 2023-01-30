@@ -19,7 +19,7 @@ async function main() {
   const CrossChain = await hre.ethers.getContractFactory("CrossChain");
 
   const crossChain = await upgrades.deployProxy(CrossChain, [
-    "500", // fee
+    "20", // fee
     "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D", // Router address
     "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", // WETH
   ]);

@@ -5,6 +5,7 @@
 // Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
 const { upgrades } = require("hardhat");
+require("dotenv").config();
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -15,27 +16,16 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const DyBUSDVenus = await hre.ethers.getContractFactory("DyBEP20Venus");
-  const dyBUSDVenus = await upgrades.deployProxy(DyBUSDVenus, [
-    "0x8301F2213c0eeD49a7E28Ae4c3e91722919B8B47", // BUSD
-    "Dynamic BUSD",
-    "DyBUSD",
-    "0x08e0A5575De71037aE36AbfAfb516595fE68e5e4", // vBUSD
-    "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D", // Unitroller
-    "0xB9e0E753630434d7863528cc73CB7AC638a7c8ff", // xvsAddress
-    "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd", // WBNB
-    "0xA11c8D9DC9b66E209Ef60F0C8D969D3CD988782c", // USD
-    "0xD99D1c33F9fC3444f8101754aBC46c52416550D1", // Pancake Router
-    {
-      leverageLevel: 15000,
-      leverageBips: 10000,
-      minMinting: "10000", // 0.1 USDT
-    },
+  const CrossChain = await hre.ethers.getContractFactory("CrossChain");
+
+  const crossChain = await upgrades.deployProxy(CrossChain, [
+    "20", // fee
+    "0x10ED43C718714eb63d5aA57B78B54704E256024E", // Router address
+    "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", // WBNB
   ]);
 
-  await dyBUSDVenus.deployed();
-
-  console.log("DyBUSDVenus deployed to:", dyBUSDVenus.address);
+  await crossChain.deployed();
+  console.log("dynamic CrossChain deployed to:", crossChain.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
