@@ -19,7 +19,8 @@ async function main() {
   const dyBNBBorrow = await DyBNBBorrow.deploy(
     "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D", // Unitroller
     "100", // borrowFees
-    "10000" // borrowDivisor
+    "10000", // borrowDivisor
+    "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd" // WBNB
   );
 
   await dyBNBBorrow.deployed();

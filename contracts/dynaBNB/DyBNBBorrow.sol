@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IVenusBEP20Delegator.sol";
 import "./interfaces/IVenusUnitroller.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "./interfaces/IPancakeRouter.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -28,8 +29,10 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
     uint256 borrowFees;
     uint256 borrowDivisor;
     IVenusUnitroller public rewardController;
+    IPancakeRouter public pancakeRouter;
 
     uint256 constant BIPS = 1e18;
+    address constant WBNB = 0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd;
 
     mapping(address => address) public delegator;
     mapping(address => mapping(address => uint256)) public borrowingAmount;
@@ -42,11 +45,13 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
     constructor(
         address rewardController_,
         uint256 borrowFees_,
-        uint256 borrowDivisor_
+        uint256 borrowDivisor_,
+        address pancakeRouter_
     ) {
         rewardController = IVenusUnitroller(rewardController_);
         borrowFees = borrowFees_;
         borrowDivisor = borrowDivisor_;
+        pancakeRouter = IPancakeRouter(pancakeRouter_);
     }
 
     function setDelegator(
@@ -67,7 +72,8 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
     function borrow(
         uint256 _amount,
         address underlying_,
-        address borrowToken_
+        address borrowToken_,
+        uint256 _borrowAmount
     ) public nonReentrant {
         require(
             delegator[underlying_] != address(0) &&
@@ -94,11 +100,16 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
         );
 
         // Borrowing
-        uint256 borrowableAmount = getBorrowableAmount(borrowToken_);
+        // uint256 borrowableAmount = getBorrowableAmount(
+        //     _amount,
+        //     borrowToken_,
+        //     underlying_
+        // );
+        uint256 borrowableAmount = _borrowAmount;
 
         require(
             borrowDelegator.borrow(borrowableAmount) == 0,
-            "DyBEP20Venus::Supplying failed"
+            "DyBEP20Venus::Borrowing failed"
         );
 
         uint256 borrowedAmount = borrowUnderlying.balanceOf(address(this));
@@ -192,23 +203,34 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
 
     // private functions
 
-    function getBorrowableAmount(address borrowToken_)
-        private
-        returns (uint256)
-    {
+    function getBorrowableAmount(
+        uint256 underlyingAmount_,
+        address borrowToken_,
+        address underlying_
+    ) public view returns (uint256) {
         IVenusBEP20Delegator borrowDelegator = IVenusBEP20Delegator(
             delegator[borrowToken_]
         );
-        uint256 underlyingBalance = borrowDelegator.balanceOfUnderlying(
-            address(this)
+        // uint256 underlyingBalance = borrowDelegator.balanceOfUnderlying(
+        //     address(this)
+        // );
+
+        address[] memory path = new address[](3);
+        path[0] = underlying_;
+        path[1] = WBNB;
+        path[2] = borrowToken_;
+
+        uint256[] memory amounts = pancakeRouter.getAmountsOut(
+            underlyingAmount_,
+            path
         );
-        uint256 borrowed = borrowDelegator.borrowBalanceCurrent(address(this));
+        uint256 underlyingBalance = amounts[2];
 
         (, uint256 borrowLimit) = rewardController.markets(
             address(borrowDelegator)
         );
 
-        return underlyingBalance.mul(borrowLimit).div(BIPS).sub(borrowed);
+        return underlyingBalance.mul(borrowLimit).div(BIPS);
     }
 
     function getRedeemableAmount(address underlying_)
