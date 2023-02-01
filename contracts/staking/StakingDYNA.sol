@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Staking2 is Ownable {
+contract StakingDYNA is Ownable {
     using SafeMath for uint256;
     uint256 public apr = 3200;
     uint256 constant RATE_PRECISION = 10000;
@@ -80,7 +80,7 @@ contract Staking2 is Ownable {
         require(enabled, "Staking is not enabled");
         require(
             _stakeAmount > 0,
-            "Staking2: stake amount must be greater than 0"
+            "StakingDYNA: stake amount must be greater than 0"
         );
         token.transferFrom(msg.sender, address(this), _stakeAmount);
         StakeDetail storage stakeDetail = stakers[msg.sender];
@@ -100,7 +100,7 @@ contract Staking2 is Ownable {
     function redeem(uint256 _redeemAmount) external {
         require(enabled, "Staking is not enabled");
         StakeDetail storage stakeDetail = stakers[msg.sender];
-        require(stakeDetail.firstStakeAt > 0, "Staking2: no stake");
+        require(stakeDetail.firstStakeAt > 0, "StakingDYNA: no stake");
 
         uint256 interest = getInterest(msg.sender);
 
@@ -113,13 +113,13 @@ contract Staking2 is Ownable {
         stakeDetail.lastProcessAt = block.timestamp;
         require(
             stakeDetail.principal >= _redeemAmount,
-            "Staking2: redeem amount must be less than principal"
+            "StakingDYNA: redeem amount must be less than principal"
         );
         stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount);
         stakeDetail.pendingReward = remainAmount;
         require(
             token.transfer(msg.sender, _redeemAmount.add(claimAmount)),
-            "Staking2: transfer failed"
+            "StakingDYNA: transfer failed"
         );
         emit Redeem(msg.sender, _redeemAmount.add(claimAmount));
     }
