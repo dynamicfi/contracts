@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IPancakePair.sol";
 import "./interfaces/IPancakeRouter.sol";
 
-contract StakingLP2 is Ownable {
+contract StakingDynaLP is Ownable {
     using SafeMath for uint256;
     using SafeMath for uint112;
 
@@ -104,7 +104,7 @@ contract StakingLP2 is Ownable {
         require(enabled, "Staking is not enabled");
         require(
             _stakeAmount > 0,
-            "Staking2: stake amount must be greater than 0"
+            "StakingDynaLP: stake amount must be greater than 0"
         );
         pair.transferFrom(msg.sender, address(this), _stakeAmount);
         StakeDetail storage stakeDetail = stakers[msg.sender];
@@ -139,7 +139,7 @@ contract StakingLP2 is Ownable {
     function redeem(uint256 _redeemAmount) external {
         require(enabled, "Staking is not enabled");
         StakeDetail storage stakeDetail = stakers[msg.sender];
-        require(stakeDetail.firstStakeAt > 0, "Staking2: no stake");
+        require(stakeDetail.firstStakeAt > 0, "StakingDynaLP: no stake");
         uint256 interest = getInterest(msg.sender);
         uint256 claimAmount = interest.mul(_redeemAmount).div(
             stakeDetail.principal
@@ -152,17 +152,17 @@ contract StakingLP2 is Ownable {
         stakeDetail.lastProcessAt = block.timestamp;
         require(
             stakeDetail.principal >= _redeemAmount,
-            "Staking2: redeem amount must be less than principal"
+            "StakingDynaLP: redeem amount must be less than principal"
         );
         stakeDetail.pendingReward = remainAmountInToken;
         stakeDetail.principal = stakeDetail.principal.sub(_redeemAmount);
         require(
             pair.transfer(msg.sender, _redeemAmount),
-            "Staking2: transfer failed"
+            "StakingDynaLP: transfer failed"
         );
         require(
             token.transfer(msg.sender, claimAmountInToken),
-            "Staking2: reward transfer failed"
+            "StakingDynaLP: reward transfer failed"
         );
         emit Redeem(msg.sender, _redeemAmount);
     }
