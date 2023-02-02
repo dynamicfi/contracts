@@ -229,13 +229,14 @@ contract CrossChain is Initializable, OwnableUpgradeable {
             require(amt[amt.length - 1] > 0, "Invalid param");
             uint256 amountOutMin = (amt[amt.length - 1] *
                 (100 - _percentSlippage)) / 100;
-            IUniswapV2Router(router).swapExactTokensForTokens(
-                _amountIn,
-                amountOutMin,
-                path,
-                _receiver,
-                block.timestamp + swapTimeout
-            );
+            IUniswapV2Router(router)
+                .swapExactTokensForETHSupportingFeeOnTransferTokens(
+                    _amountIn,
+                    amountOutMin,
+                    path,
+                    _receiver,
+                    block.timestamp + swapTimeout
+                );
         }
     }
 
