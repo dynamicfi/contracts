@@ -230,7 +230,7 @@ contract CrossChain is Initializable, OwnableUpgradeable {
             uint256 amountOutMin = (amt[amt.length - 1] *
                 (100 - _percentSlippage)) / 100;
             IUniswapV2Router(router)
-                .swapExactTokensForETHSupportingFeeOnTransferTokens(
+                .swapExactTokensForTokensSupportingFeeOnTransferTokens(
                     _amountIn,
                     amountOutMin,
                     path,
