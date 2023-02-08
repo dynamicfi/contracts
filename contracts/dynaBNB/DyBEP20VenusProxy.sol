@@ -83,11 +83,6 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         WBNB = IERC20Upgradeable(WBNB_);
         USD = USD_;
         pancakeRouter = IPancakeRouter(pancakeRouter_);
-        _updateLeverage(
-            leverageSettings_.leverageLevel,
-            leverageSettings_.leverageBips,
-            leverageSettings_.leverageBips.mul(990).div(1000) //works as long as leverageBips > 1000
-        );
         _enterMarket();
         updateDepositsEnabled(true);
     }
@@ -126,40 +121,6 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         return balance.sub(borrowAmount);
     }
 
-    function updateLeverage(
-        uint256 _leverageLevel,
-        uint256 _leverageBips,
-        uint256 _redeemLimitSafetyMargin
-    ) external onlyOwner {
-        _updateLeverage(
-            _leverageLevel,
-            _leverageBips,
-            _redeemLimitSafetyMargin
-        );
-
-        (uint256 balance, uint256 borrowed) = _getAccountData();
-        // _unrollDebt(balance.sub(borrowed));
-        // _rollupDebt();
-    }
-
-    function _updateLeverage(
-        uint256 leverageLevel_,
-        uint256 leverageBips_,
-        uint256 redeemLimitSafetyMargin_
-    ) internal {
-        leverageLevel = leverageLevel_;
-        leverageBips = leverageBips_;
-        redeemLimitSafetyMargin = redeemLimitSafetyMargin_;
-    }
-
-    function updateMinimumBoundaries(
-        uint256 redeemLimitSafetyMargin_,
-        uint256 minMinting_
-    ) public onlyOwner {
-        minMinting = minMinting_;
-        redeemLimitSafetyMargin = redeemLimitSafetyMargin_;
-    }
-
     function _enterMarket() internal {
         address[] memory tokens = new address[](1);
         tokens[0] = address(tokenDelegator);
@@ -177,40 +138,6 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         require(success == 0, "DyBEP20Venus::Deposit failed");
         // _rollupDebt();
     }
-
-    // function _rollupDebt() internal {
-    //     (uint256 balance, uint256 borrowed) = _getAccountData();
-    //     (uint256 borrowLimit, uint256 borrowBips) = _getBorrowLimit();
-    //     uint256 lendTarget = balance.sub(borrowed).mul(leverageLevel).div(
-    //         leverageBips
-    //     );
-    //     underlying.approve(address(tokenDelegator), lendTarget);
-    //     while (balance < lendTarget) {
-    //         uint256 toBorrowAmount = _getBorrowable(
-    //             balance,
-    //             borrowed,
-    //             borrowLimit,
-    //             borrowBips
-    //         );
-    //         if (balance.add(toBorrowAmount) > lendTarget) {
-    //             toBorrowAmount = lendTarget.sub(balance);
-    //         }
-    //         // safeguard needed because we can't mint below a certain threshold
-    //         if (toBorrowAmount < minMinting) {
-    //             break;
-    //         }
-    //         require(
-    //             tokenDelegator.borrow(toBorrowAmount) == 0,
-    //             "DyBEP20Venus::borrowing failed"
-    //         );
-    //         require(
-    //             tokenDelegator.mint(toBorrowAmount) == 0,
-    //             "DyBEP20Venus::lending failed"
-    //         );
-    //         (balance, borrowed) = _getAccountData();
-    //     }
-    //     underlying.approve(address(tokenDelegator), 0);
-    // }
 
     function _getAccountData() internal returns (uint256, uint256) {
         uint256 balance = tokenDelegator.balanceOfUnderlying(address(this));
@@ -260,47 +187,6 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
                 .mul(redeemLimitSafetyMargin)
                 .div(leverageBips);
     }
-
-    // function _unrollDebt(uint256 amountToBeFreed_) internal {
-    //     (uint256 balance, uint256 borrowed) = _getAccountData();
-    //     (uint256 borrowLimit, uint256 borrowBips) = _getBorrowLimit();
-    //     uint256 targetBorrow = balance
-    //         .sub(borrowed)
-    //         .sub(amountToBeFreed_)
-    //         .mul(leverageLevel)
-    //         .div(leverageBips)
-    //         .sub(balance.sub(borrowed).sub(amountToBeFreed_));
-    //     uint256 toRepay = 0;
-    //     if (borrowed > targetBorrow) {
-    //         toRepay = borrowed.sub(targetBorrow);
-    //     }
-    //     underlying.approve(address(tokenDelegator), borrowed);
-    //     while (toRepay > 0) {
-    //         uint256 unrollAmount = _getRedeemable(
-    //             balance,
-    //             borrowed,
-    //             borrowLimit,
-    //             borrowBips
-    //         );
-    //         if (unrollAmount > toRepay) {
-    //             unrollAmount = toRepay;
-    //         }
-    //         require(
-    //             tokenDelegator.redeemUnderlying(unrollAmount) == 0,
-    //             "DyBEP20Venus::failed to redeem"
-    //         );
-    //         require(
-    //             tokenDelegator.repayBorrow(unrollAmount) == 0,
-    //             "DyBEP20Venus::failed to repay borrow"
-    //         );
-    //         (balance, borrowed) = _getAccountData();
-    //         if (targetBorrow >= borrowed) {
-    //             break;
-    //         }
-    //         toRepay = borrowed.sub(targetBorrow);
-    //     }
-    //     underlying.approve(address(tokenDelegator), 0);
-    // }
 
     function reinvest() external {
         _reinvest(false);
@@ -357,26 +243,6 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         uint256 balance = internalBalance.mul(exchangeRate).div(1e18);
         return balance.mul(1e18).div(balance.sub(borrowAmount));
     }
-
-    // function rescueDeployedFunds(uint256 minReturnAmountAccepted)
-    //     external
-    //     onlyOwner
-    // {
-    //     uint256 balanceBefore = underlying.balanceOf(address(this));
-    //     (uint256 balance, uint256 borrowed) = _getAccountData();
-    //     _unrollDebt(balance.sub(borrowed));
-    //     tokenDelegator.redeemUnderlying(
-    //         tokenDelegator.balanceOfUnderlying(address(this))
-    //     );
-    //     uint256 balanceAfter = underlying.balanceOf(address(this));
-    //     require(
-    //         balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted,
-    //         "DyBEP20Venus::rescueDeployedFunds"
-    //     );
-    //     if (depositEnable == true) {
-    //         updateDepositsEnabled(false);
-    //     }
-    // }
 
     function distributeReward() public view returns (uint256) {
         uint256 xvsRewards = VenusLibrary.calculateReward(
@@ -452,37 +318,5 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
             path
         );
         return amounts[1];
-    }
-
-    function supplyCollateral(uint256 _amount) public {
-        underlying.transferFrom(_msgSender(), address(this), _amount);
-        underlying.approve(address(tokenDelegator), _amount);
-        require(
-            tokenDelegator.mint(_amount) == 0,
-            "DyBEP20Venus::Supplying failed"
-        );
-
-        BorrowBalance storage userBorrowBalance = userBorrow[msg.sender];
-        userBorrowBalance.supply += _amount;
-    }
-
-    function borrow(uint256 _amount) public {
-        BorrowBalance storage userBorrowBalance = userBorrow[msg.sender];
-        require(
-            tokenDelegator.borrow(_amount) == 0,
-            "DyBEP20Venus::Borrowing failed"
-        );
-
-        userBorrowBalance.loan += _amount;
-    }
-
-    function repay(uint256 _amount) public {
-        BorrowBalance storage userBorrowBalance = userBorrow[msg.sender];
-        require(
-            tokenDelegator.repayBorrow(_amount) == 0,
-            "DyBEP20Venus::Repay failed"
-        );
-
-        userBorrowBalance.loan -= _amount;
     }
 }
