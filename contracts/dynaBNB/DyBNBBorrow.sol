@@ -9,6 +9,7 @@ import "./interfaces/IVenusBEP20Delegator.sol";
 import "./interfaces/IVenusUnitroller.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./interfaces/IPancakeRouter.sol";
+import "./interfaces/IPriceOracle.sol";
 
 /**
  ________      ___    ___ ________   ________  _____ ______   ___  ________     
@@ -29,7 +30,7 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
     uint256 borrowFees;
     uint256 borrowDivisor;
     IVenusUnitroller public rewardController;
-    IPancakeRouter public pancakeRouter;
+    IPriceOracle public oracle;
 
     uint256 constant BIPS = 1e18;
     address constant WBNB = 0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd;
@@ -46,12 +47,12 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
         address rewardController_,
         uint256 borrowFees_,
         uint256 borrowDivisor_,
-        address pancakeRouter_
+        address oracle_
     ) {
         rewardController = IVenusUnitroller(rewardController_);
         borrowFees = borrowFees_;
         borrowDivisor = borrowDivisor_;
-        pancakeRouter = IPancakeRouter(pancakeRouter_);
+        oracle = IPriceOracle(oracle_);
     }
 
     function setDelegator(
@@ -72,13 +73,16 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
     function borrow(
         uint256 _amount,
         address underlying_,
-        address borrowToken_,
-        uint256 _borrowAmount
-    ) public nonReentrant {
+        address borrowToken_
+    )
+        public
+        // uint256 _borrowAmount
+        nonReentrant
+    {
         require(
             delegator[underlying_] != address(0) &&
                 delegator[borrowToken_] != address(0),
-            "Underlying is not registered."
+            "[DyBEP20BorrowVenus]::Underlying is not registered."
         );
 
         IERC20 underlying = IERC20(underlying_);
@@ -96,20 +100,15 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
 
         require(
             tokenDelegator.mint(_amount) == 0,
-            "DyBEP20Venus::Supplying failed"
+            "[DyBEP20BorrowVenus]::Supplying failed"
         );
 
         // Borrowing
-        // uint256 borrowableAmount = getBorrowableAmount(
-        //     _amount,
-        //     borrowToken_,
-        //     underlying_
-        // );
-        uint256 borrowableAmount = _borrowAmount;
+        uint256 borrowableAmount = getBorrowableAmount(borrowToken_);
 
         require(
             borrowDelegator.borrow(borrowableAmount) == 0,
-            "DyBEP20Venus::Borrowing failed"
+            "[DyBEP20BorrowVenus]::Borrowing failed"
         );
 
         uint256 borrowedAmount = borrowUnderlying.balanceOf(address(this));
@@ -130,7 +129,7 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
         require(
             delegator[underlying_] != address(0) &&
                 delegator[borrowToken_] != address(0),
-            "Underlying is not registered."
+            "[DyBEP20BorrowVenus]::Underlying is not registered."
         );
 
         IERC20 underlying = IERC20(underlying_);
@@ -148,7 +147,7 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
 
         require(
             borrowDelegator.repayBorrow(_amount) == 0,
-            "DyBEP20Venus::Repay failed"
+            "[DyBEP20BorrowVenus]::Repay failed"
         );
 
         borrowingAmount[_msgSender()][borrowToken_] = borrowingAmount[
@@ -164,7 +163,10 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
 
             uint256 redeemableUnderlying = getRedeemableAmount(underlying_);
 
-            require(redeemableUnderlying > 0, "Not enough redeemable assets");
+            require(
+                redeemableUnderlying > 0,
+                "[DyBEP20BorrowVenus]::Not enough redeemable assets"
+            );
 
             uint256 finalRedeemableAmount = 0;
             if (
@@ -183,7 +185,7 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
             uint256 success = tokenDelegator.redeemUnderlying(
                 finalRedeemableAmount
             );
-            require(success == 0, "DyBEP20Venus::failed to redeem");
+            require(success == 0, "[DyBEP20BorrowVenus]::Failed to redeem");
 
             uint256 redeemedUnderlyingBalance = underlying.balanceOf(
                 address(this)
@@ -203,34 +205,40 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
 
     // private functions
 
-    function getBorrowableAmount(
-        uint256 underlyingAmount_,
-        address borrowToken_,
-        address underlying_
-    ) public view returns (uint256) {
+    function getBorrowableAmount(address borrowToken_)
+        public
+        view
+        returns (uint256)
+    {
         IVenusBEP20Delegator borrowDelegator = IVenusBEP20Delegator(
             delegator[borrowToken_]
         );
-        // uint256 underlyingBalance = borrowDelegator.balanceOfUnderlying(
-        //     address(this)
-        // );
 
-        address[] memory path = new address[](3);
-        path[0] = underlying_;
-        path[1] = WBNB;
-        path[2] = borrowToken_;
-
-        uint256[] memory amounts = pancakeRouter.getAmountsOut(
-            underlyingAmount_,
-            path
+        (
+            uint256 errorCode,
+            uint256 borrowableAmountInDollar,
+            uint256 shortFall
+        ) = rewardController.getAccountLiquidity(address(this));
+        require(errorCode == 0, "[DyBEP20BorrowVenus]::Get borrowable failed");
+        require(
+            shortFall == 0,
+            "[DyBEP20BorrowVenus]::Having shortfall account"
         );
-        uint256 underlyingBalance = amounts[2];
+
+        uint256 underlyingPrice = oracle.getUnderlyingPrice(
+            delegator[borrowToken_]
+        );
 
         (, uint256 borrowLimit) = rewardController.markets(
             address(borrowDelegator)
         );
 
-        return underlyingBalance.mul(borrowLimit).div(BIPS);
+        return
+            borrowableAmountInDollar
+                .mul(underlyingPrice)
+                .div(BIPS)
+                .mul(borrowLimit)
+                .div(BIPS);
     }
 
     function getRedeemableAmount(address underlying_)

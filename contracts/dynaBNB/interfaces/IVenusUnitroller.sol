@@ -49,4 +49,13 @@ interface IVenusUnitroller {
         returns (uint224 index, uint32 block);
 
     function venusSpeeds(address token) external view returns (uint256);
+
+    function getAccountLiquidity(address account)
+        external
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256
+        );
 }

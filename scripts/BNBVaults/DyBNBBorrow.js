@@ -20,7 +20,7 @@ async function main() {
     "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D", // Unitroller
     "100", // borrowFees
     "10000", // borrowDivisor
-    "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd" // WBNB
+    "0xd61c7Fa07dF7241812eA6D21744a61f1257D1818" // Oracle
   );
 
   await dyBNBBorrow.deployed();
