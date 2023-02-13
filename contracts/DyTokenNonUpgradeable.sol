@@ -107,6 +107,7 @@ abstract contract DyTokenNonUpgradeable is ERC20, Ownable {
         }
 
         _doTransferIn(_msgSender(), amountUnderlying_);
+        _mint(_msgSender(), amountUnderlying_);
         _stakeDepositTokens(amountUnderlying_);
         emit Deposit(_msgSender(), amountUnderlying_, _mintTokens);
     }
@@ -117,6 +118,8 @@ abstract contract DyTokenNonUpgradeable is ERC20, Ownable {
      */
     function _withdraw(uint256 amount_) internal {
         require(amount_ > 0, "DyToken::amount_ > 0");
+        transferFrom(_msgSender(), address(this), amount_);
+        _burn(address(this), amount_);
         _withdrawDepositTokens(amount_);
         _doTransferOut(payable(_msgSender()), amount_);
         emit Withdraw(_msgSender(), amount_);

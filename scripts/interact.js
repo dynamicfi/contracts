@@ -14,16 +14,16 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const TokenTestnet = await hre.ethers.getContractFactory("TestnetToken");
+  const TokenTestnet = await hre.ethers.getContractFactory("IPriceOracle");
   const tokenTestnet = await TokenTestnet.attach(
-    "0x07865c6E87B9F70255377e024ace6630C1Eaa37F"
+    "0xd61c7Fa07dF7241812eA6D21744a61f1257D1818"
   );
 
-  await tokenTestnet.approve(
-    "0xDBd4527d79B76895BA31f7eC68DCe3f287a0354B",
-    "1000000"
+  const value = await tokenTestnet.getUnderlyingPrice(
+    "0xA11c8D9DC9b66E209Ef60F0C8D969D3CD988782c"
   );
 
+  console.log("value: ", value.toString());
   console.log("interact successfully");
 }
 

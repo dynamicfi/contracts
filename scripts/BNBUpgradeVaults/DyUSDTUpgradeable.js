@@ -16,9 +16,9 @@ async function main() {
 
   // We get the contract to deploy
 
-  const DY_USDT_ADDRESS = "0x28E45771a24C2BF662b323a43761b43864BE38c3";
+  const DY_USDT_ADDRESS = "0xF5Fbf05AB6A41A7abFaf9D0F3A119633469D1E40";
 
-  const DyUSDTVenus = await hre.ethers.getContractFactory("DyBEP20Venus");
+  const DyUSDTVenus = await hre.ethers.getContractFactory("DyBEP20VenusProxy");
   await upgrades.upgradeProxy(DY_USDT_ADDRESS, DyUSDTVenus);
 
   console.log("DyUSDTVenus upgraded successfully");

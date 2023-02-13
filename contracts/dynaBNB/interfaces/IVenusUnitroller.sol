@@ -19,6 +19,8 @@ interface IVenusUnitroller {
         external
         returns (uint256[] memory);
 
+    function exitMarket(address vToken) external returns (uint256);
+
     function markets(address vTokenAddress)
         external
         view
@@ -49,4 +51,13 @@ interface IVenusUnitroller {
         returns (uint224 index, uint32 block);
 
     function venusSpeeds(address token) external view returns (uint256);
+
+    function getAccountLiquidity(address account)
+        external
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256
+        );
 }
