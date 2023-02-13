@@ -122,6 +122,7 @@ abstract contract DyToken is
         }
 
         _doTransferIn(_msgSender(), amountUnderlying_);
+        _mint(_msgSender(), amountUnderlying_.mul(10**(18 - 6)));
         _stakeDepositTokens(amountUnderlying_);
         emit Deposit(_msgSender(), amountUnderlying_, _mintTokens);
     }
@@ -132,8 +133,10 @@ abstract contract DyToken is
      */
     function _withdraw(uint256 amount_) internal {
         require(amount_ > 0, "DyToken::amount_ > 0");
+        transferFrom(_msgSender(), address(this), amount_);
+        _burn(address(this), amount_);
         _withdrawDepositTokens(amount_);
-        _doTransferOut(payable(_msgSender()), amount_);
+        // _doTransferOut(payable(_msgSender()), amount_);
     }
 
     // function _claimDyna(uint256 _amount, address _tokenOut) internal {

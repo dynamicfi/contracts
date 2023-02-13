@@ -6,7 +6,7 @@ interface IDyBNBBorrow {
         uint256 amount_,
         address depositor_,
         address underlying_
-    ) external;
+    ) external payable;
 
     function withdraw(
         uint256,

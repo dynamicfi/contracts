@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./interfaces/IVenusBEP20Delegator.sol";
 import "./interfaces/IVenusUnitroller.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "./interfaces/IPancakeRouter.sol";
 import "./interfaces/IPriceOracle.sol";
 
@@ -27,8 +28,12 @@ interface IERC20Decimal {
     function decimals() external view returns (uint256);
 }
 
-contract DyBNBBorrow is Ownable, ReentrancyGuard {
-    using SafeMath for uint256;
+contract DyBNBBorrow is
+    Initializable,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable
+{
+    using SafeMathUpgradeable for uint256;
 
     // variables, structs and mappings
     uint256 borrowFees;
@@ -39,7 +44,6 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
     uint256 constant BIPS = 1e18;
     uint256 constant ONE_YEAR_IN_SECOND = 365 days;
     address constant WBNB = 0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd;
-    uint256 constant Divident = 10000;
     address[] vaults;
 
     mapping(address => address) public delegator;
@@ -48,16 +52,28 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
         public underlyingBalanceUser;
     mapping(address => mapping(address => uint256)) public borrowTimestamp;
     mapping(address => uint256) public BorrowAPY;
+    mapping(address => bool) checkVaults;
 
     // events
 
+    modifier isVault(address vault_) {
+        require(
+            checkVaults[vault_] == true,
+            "[DyBEP20BorrowVenus]::Must be vault"
+        );
+        _;
+    }
+
     // constructor and functions
-    constructor(
+
+    function initialize(
         address rewardController_,
         uint256 borrowFees_,
         uint256 borrowDivisor_,
         address oracle_
-    ) {
+    ) public initializer {
+        __Ownable_init();
+
         rewardController = IVenusUnitroller(rewardController_);
         borrowFees = borrowFees_;
         borrowDivisor = borrowDivisor_;
@@ -79,6 +95,10 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
         BorrowAPY[token_] = APY_;
     }
 
+    function setCheckVault(bool bool_, address vault_) public onlyOwner {
+        checkVaults[vault_] = bool_;
+    }
+
     function setBorrowFee(uint256 _borrowFees) public onlyOwner {
         require(_borrowFees < borrowDivisor, "Fee too high");
         borrowFees = _borrowFees;
@@ -94,25 +114,32 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
         uint256 amount_,
         address depositor_,
         address underlying_
-    ) public {
+    ) public payable isVault(_msgSender()) {
         require(
             delegator[underlying_] != address(0),
             "[DyBEP20BorrowVenus]::Underlying is not registered."
         );
 
-        IERC20 underlying = IERC20(underlying_);
+        IERC20Upgradeable underlying = IERC20Upgradeable(underlying_);
         IVenusBEP20Delegator tokenDelegator = IVenusBEP20Delegator(
             delegator[underlying_]
         );
 
         // Supplying underlying
-        underlying.transferFrom(_msgSender(), address(this), amount_);
-        underlying.approve(address(tokenDelegator), amount_);
+        if (underlying_ == WBNB) {
+            require(
+                tokenDelegator.mint(amount_) == 0,
+                "[DyBEP20BorrowVenus]::Supplying failed"
+            );
+        } else {
+            underlying.transferFrom(_msgSender(), address(this), amount_);
+            underlying.approve(address(tokenDelegator), amount_);
 
-        require(
-            tokenDelegator.mint(amount_) == 0,
-            "[DyBEP20BorrowVenus]::Supplying failed"
-        );
+            require(
+                tokenDelegator.mint(amount_) == 0,
+                "[DyBEP20BorrowVenus]::Supplying failed"
+            );
+        }
 
         underlyingBalanceUser[depositor_][underlying_] += amount_;
     }
@@ -121,7 +148,7 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
         uint256,
         address withdrawer_,
         address underlying_
-    ) public {
+    ) public payable isVault(_msgSender()) {
         require(
             delegator[underlying_] != address(0),
             "[DyBEP20BorrowVenus]::Underlying is not registered."
@@ -132,7 +159,7 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
             "[DyBEP20BorrowVenus]::Need to pay borrowed"
         );
 
-        IERC20 underlying = IERC20(underlying_);
+        IERC20Upgradeable underlying = IERC20Upgradeable(underlying_);
         IVenusBEP20Delegator tokenDelegator = IVenusBEP20Delegator(
             delegator[underlying_]
         );
@@ -169,15 +196,25 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
         );
         require(success == 0, "[DyBEP20BorrowVenus]::Failed to redeem");
 
-        uint256 redeemedUnderlyingBalance = underlying.balanceOf(address(this));
-        underlying.transfer(withdrawer_, redeemedUnderlyingBalance);
+        if (underlying_ == WBNB) {
+            (bool success, ) = withdrawer_.call{value: address(this).balance}(
+                ""
+            );
+            require(success, "Transfer ETH failed");
+        } else {
+            uint256 redeemedUnderlyingBalance = underlying.balanceOf(
+                address(this)
+            );
+            underlying.transfer(withdrawer_, redeemedUnderlyingBalance);
+        }
+
         underlyingBalanceUser[withdrawer_][underlying_] = underlyingBalanceUser[
             withdrawer_
         ][underlying_].sub(underlyingBalanceUser[withdrawer_][underlying_]);
     }
 
     function borrow(uint256 _amount, address borrowToken_) public nonReentrant {
-        IERC20 borrowUnderlying = IERC20(borrowToken_);
+        IERC20Upgradeable borrowUnderlying = IERC20Upgradeable(borrowToken_);
         IVenusBEP20Delegator borrowDelegator = IVenusBEP20Delegator(
             delegator[borrowToken_]
         );
@@ -210,7 +247,7 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
             "[DyBEP20BorrowVenus]::Underlying is not registered."
         );
 
-        IERC20 borrowUnderlying = IERC20(borrowToken_);
+        IERC20Upgradeable borrowUnderlying = IERC20Upgradeable(borrowToken_);
         IVenusBEP20Delegator borrowDelegator = IVenusBEP20Delegator(
             delegator[borrowToken_]
         );
@@ -230,6 +267,7 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
         borrowingAmount[_msgSender()][borrowToken_] = borrowingAmount[
             _msgSender()
         ][borrowToken_].sub(_amount);
+        borrowTimestamp[_msgSender()][borrowToken_] = block.timestamp;
     }
 
     function getBorrowBalance(address borrowToken_)
@@ -334,19 +372,6 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
         return borrowingAmount[user_][borrowToken_];
     }
 
-    function getRealBorrowableAmount(uint256 amount_, address borrowToken_)
-        public
-        view
-        returns (uint256)
-    {
-        IERC20Decimal borrowInterface = IERC20Decimal(borrowToken_);
-        return
-            amount_
-                .mul(borrowInterface.decimals())
-                .div(10**(18 - borrowInterface.decimals()))
-                .div(BIPS);
-    }
-
     function getBorrowInterest(address user_, address borrowToken_)
         public
         view
@@ -358,7 +383,7 @@ contract DyBNBBorrow is Ownable, ReentrancyGuard {
                 .mul(borrowAmount)
                 .mul(BorrowAPY[borrowToken_])
                 .div(ONE_YEAR_IN_SECOND)
-                .div(Divident);
+                .div(borrowDivisor);
     }
 
     function getRedeemableAmount(address underlying_)

@@ -4,6 +4,7 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
+const { upgrades } = require("hardhat");
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -16,12 +17,18 @@ async function main() {
   // We get the contract to deploy
   const DyBNBBorrow = await hre.ethers.getContractFactory("DyBNBBorrow");
 
-  const dyBNBBorrow = await DyBNBBorrow.deploy(
+  // const dyBNBBorrow = await DyBNBBorrow.deploy(
+  //   "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D", // Unitroller
+  //   "100", // borrowFees
+  //   "10000", // borrowDivisor
+  //   "0xd61c7Fa07dF7241812eA6D21744a61f1257D1818" // Oracle
+  // );
+  const dyBNBBorrow = await upgrades.deployProxy(DyBNBBorrow, [
     "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D", // Unitroller
     "100", // borrowFees
     "10000", // borrowDivisor
-    "0xd61c7Fa07dF7241812eA6D21744a61f1257D1818" // Oracle
-  );
+    "0xd61c7Fa07dF7241812eA6D21744a61f1257D1818", // Oracle
+  ]);
 
   await dyBNBBorrow.deployed();
 

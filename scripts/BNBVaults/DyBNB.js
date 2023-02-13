@@ -14,9 +14,10 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const DyBNBVenus = await hre.ethers.getContractFactory("DyBNBVenus");
+  const DyBNBVenus = await hre.ethers.getContractFactory("DyBNBVenusProxy");
 
   const dyBNBVenus = await DyBNBVenus.deploy(
+    "0x634f032e9b1ffa4Fd268b8AF836AAD331afdA488", // BorrowVenus
     "Dynamic BNB",
     "DyBNB",
     "0x2E7222e51c0f6e98610A1543Aa3836E092CDe62c", // cBNB

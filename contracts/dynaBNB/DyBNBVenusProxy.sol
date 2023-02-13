@@ -1,16 +1,16 @@
-// contracts/Venus/DyBEP20Venus.sol
+// contracts/venus/DyBNBVenus.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-import "../DyERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "../DyETH.sol";
+import "./interfaces/IVenusBNBDelegator.sol";
 import "./interfaces/IVenusBEP20Delegator.sol";
 import "./interfaces/IVenusUnitroller.sol";
 import "./interfaces/IPancakeRouter.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./lib/VenusLibrary.sol";
 import "./interfaces/IDyBorrow.sol";
 
@@ -25,7 +25,7 @@ import "./interfaces/IDyBorrow.sol";
              \|___|/                                                            
  */
 
-contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
+contract DyBNBVenusProxy is Ownable, DyETH {
     using SafeMath for uint256;
 
     struct LeverageSettings {
@@ -49,10 +49,10 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
     event TrackingUserInterest(address user, uint256 amount);
 
     IDyBNBBorrow public borrowVenus;
-    IVenusBEP20Delegator public tokenDelegator;
+    IVenusBNBDelegator public tokenDelegator;
     IVenusUnitroller public rewardController;
-    IERC20Upgradeable public xvsToken;
-    IERC20Upgradeable public WBNB;
+    IERC20 public xvsToken;
+    IERC20 public WBNB;
     IPancakeRouter public pancakeRouter;
     uint256 public leverageLevel;
     uint256 public leverageBips;
@@ -60,9 +60,8 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
     uint256 public redeemLimitSafetyMargin;
     uint256 public totalInterest;
 
-    function initialize(
+    constructor(
         address borrowVenus_,
-        address underlying_,
         string memory name_,
         string memory symbol_,
         address tokenDelegator_,
@@ -72,33 +71,37 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         address USD_,
         address pancakeRouter_,
         LeverageSettings memory leverageSettings_
-    ) public initializer {
-        __Ownable_init();
-        __initialize__DyERC20(underlying_, name_, symbol_);
+    ) DyETH(name_, symbol_) {
         borrowVenus = IDyBNBBorrow(borrowVenus_);
-        tokenDelegator = IVenusBEP20Delegator(tokenDelegator_);
+        tokenDelegator = IVenusBNBDelegator(tokenDelegator_);
         rewardController = IVenusUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;
-        xvsToken = IERC20Upgradeable(xvsAddress_);
-        WBNB = IERC20Upgradeable(WBNB_);
+        _updateLeverage(
+            leverageSettings_.leverageLevel,
+            leverageSettings_.leverageBips,
+            leverageSettings_.leverageBips.mul(990).div(1000) //works as long as leverageBips > 1000
+        );
+        xvsToken = IERC20(xvsAddress_);
+        WBNB = IERC20(WBNB_);
         USD = USD_;
         pancakeRouter = IPancakeRouter(pancakeRouter_);
         _enterMarket();
         updateDepositsEnabled(true);
     }
 
-    function deposit(uint256 amountUnderlying_) public override(DyERC20) {
+    function deposit(uint256 amountUnderlying_) public payable override(DyETH) {
         super.deposit(amountUnderlying_);
         emit TrackingDeposit(amountUnderlying_, _getVaultValueInDollar());
         emit TrackingUserDeposit(_msgSender(), amountUnderlying_);
     }
 
-    function withdraw(uint256 amount_) public override(DyERC20) {
+    function withdraw(uint256 amount_) public override(DyETH) {
         super.withdraw(amount_);
         DepositStruct storage user = userInfo[_msgSender()];
         uint256 reward = user.rewardBalance;
         user.rewardBalance = 0;
-        underlying.transferFrom(address(this), _msgSender(), reward);
+        (bool success, ) = _msgSender().call{value: reward}("");
+        require(success, "Transfer ETH failed");
         emit TrackingWithdraw(amount_, _getVaultValueInDollar());
         emit TrackingUserWithdraw(_msgSender(), amount_);
     }
@@ -121,6 +124,24 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         return balance.sub(borrowAmount);
     }
 
+    function updateMinimumBoundaries(
+        uint256 redeemLimitSafetyMargin_,
+        uint256 minMinting_
+    ) public onlyOwner {
+        minMinting = minMinting_;
+        redeemLimitSafetyMargin = redeemLimitSafetyMargin_;
+    }
+
+    function _updateLeverage(
+        uint256 leverageLevel_,
+        uint256 leverageBips_,
+        uint256 redeemLimitSafetyMargin_
+    ) internal {
+        leverageLevel = leverageLevel_;
+        leverageBips = leverageBips_;
+        redeemLimitSafetyMargin = redeemLimitSafetyMargin_;
+    }
+
     function _enterMarket() internal {
         address[] memory tokens = new address[](1);
         tokens[0] = address(tokenDelegator);
@@ -132,12 +153,11 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         virtual
         override
     {
-        require(amountUnderlying_ > 0, "DyBEP20Venus::stakeDepositTokens");
-        underlying.approve(address(borrowVenus), amountUnderlying_);
-        borrowVenus.deposit(
+        require(amountUnderlying_ > 0, "DyBNBVenus::stakeDepositTokens");
+        borrowVenus.deposit{value: amountUnderlying_}(
             amountUnderlying_,
             _msgSender(),
-            address(underlying)
+            address(WBNB)
         );
     }
 
@@ -170,14 +190,12 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
     {
         require(
             amountUnderlying_ >= minMinting,
-            "DyBEP20Venus::below minimum withdraw"
+            "DyBNBVenus::below minimum withdraw"
         );
-        borrowVenus.withdraw(
-            amountUnderlying_,
-            _msgSender(),
-            address(underlying)
-        );
+        borrowVenus.withdraw(amountUnderlying_, _msgSender(), address(WBNB));
     }
+
+    receive() external payable {}
 
     function _getRedeemable(
         uint256 balance,
@@ -192,51 +210,6 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
                 .div(leverageBips);
     }
 
-    function reinvest() external {
-        _reinvest(false);
-    }
-
-    /**
-     * @notice Reinvest rewards from staking contract to deposit tokens
-     */
-    function _reinvest(bool userDeposit) private {
-        address[] memory markets = new address[](1);
-        markets[0] = address(tokenDelegator);
-        uint256 reward = distributeReward();
-        totalInterest += reward;
-        rewardController.claimVenus(address(this), markets);
-
-        uint256 xvsBalance = xvsToken.balanceOf(address(this));
-        if (xvsBalance > 0) {
-            xvsToken.approve(address(pancakeRouter), xvsBalance);
-            address[] memory path = new address[](3);
-            path[0] = address(xvsToken);
-            path[1] = address(WBNB);
-            path[2] = address(underlying);
-            uint256 _deadline = block.timestamp + 3000;
-            pancakeRouter.swapExactTokensForTokens(
-                xvsBalance,
-                0,
-                path,
-                address(this),
-                _deadline
-            );
-        }
-
-        _distributeRewardByAmount(reward);
-
-        uint256 amount = underlying.balanceOf(address(this));
-        if (!userDeposit) {
-            require(amount >= minTokensToReinvest, "DyBEP20Venus::reinvest");
-        }
-        if (amount > 0) {
-            _stakeDepositTokens(amount);
-        }
-
-        emit Reinvest(totalDeposits(), totalSupply());
-        emit TrackingInterest(block.timestamp, reward);
-    }
-
     function getActualLeverage() public view returns (uint256) {
         (
             ,
@@ -248,10 +221,73 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         return balance.mul(1e18).div(balance.sub(borrowAmount));
     }
 
+    function reinvest() external nonReentrant {
+        _reinvest(0);
+    }
+
+    /**
+     * @notice Reinvest rewards from staking contract to deposit tokens
+     */
+    function _reinvest(uint256 userDeposit) private {
+        address[] memory markets = new address[](1);
+        markets[0] = address(tokenDelegator);
+        uint256 reward = distributeReward();
+        totalInterest += reward;
+        rewardController.claimVenus(address(this), markets);
+
+        uint256 xvsBalance = xvsToken.balanceOf(address(this));
+        if (xvsBalance > 0) {
+            xvsToken.approve(address(pancakeRouter), xvsBalance);
+            address[] memory path = new address[](2);
+            path[0] = address(xvsToken);
+            path[1] = address(WBNB);
+            uint256 _deadline = block.timestamp + 3000;
+            pancakeRouter.swapExactTokensForETH(
+                xvsBalance,
+                0,
+                path,
+                address(this),
+                _deadline
+            );
+        }
+
+        _distributeRewardByAmount(reward);
+
+        uint256 amount = address(this).balance;
+        if (userDeposit == 0) {
+            require(amount >= minTokensToReinvest, "DyBNBVenus::reinvest");
+        }
+
+        if (amount > 0) {
+            _stakeDepositTokens(amount);
+        }
+
+        emit Reinvest(totalDeposits(), totalSupply());
+        emit TrackingInterest(block.timestamp, reward);
+    }
+
+    function rescueDeployedFunds(uint256 minReturnAmountAccepted)
+        external
+        onlyOwner
+    {
+        uint256 balanceBefore = address(this).balance;
+        tokenDelegator.redeemUnderlying(
+            tokenDelegator.balanceOfUnderlying(address(this))
+        );
+        uint256 balanceAfter = address(this).balance;
+        require(
+            balanceAfter.sub(balanceBefore) >= minReturnAmountAccepted,
+            "DyBNBVenus::rescueDeployedFunds"
+        );
+        if (depositEnable == true) {
+            updateDepositsEnabled(false);
+        }
+    }
+
     function distributeReward() public view returns (uint256) {
         uint256 xvsRewards = VenusLibrary.calculateReward(
             rewardController,
-            tokenDelegator,
+            IVenusBEP20Delegator(address(tokenDelegator)),
             address(this)
         );
         if (xvsRewards == 0) {
@@ -260,7 +296,6 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         address[] memory path = new address[](3);
         path[0] = address(xvsToken);
         path[1] = address(WBNB);
-        path[2] = address(underlying);
         uint256[] memory amounts = pancakeRouter.getAmountsOut(
             xvsRewards,
             path
@@ -307,20 +342,41 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         return percent;
     }
 
-    function _getVaultValueInDollar() public view returns (uint256) {
+    function _getVaultValueInDollar() internal view returns (uint256) {
         if (totalTokenStack == 0) {
             return 0;
         }
-        if (address(underlying) == USD) {
-            return totalTokenStack;
-        }
         address[] memory path = new address[](2);
-        path[0] = address(underlying);
+        path[0] = address(WBNB);
         path[1] = address(USD);
         uint256[] memory amounts = pancakeRouter.getAmountsOut(
             totalTokenStack,
             path
         );
         return amounts[1];
+    }
+
+    function supplyCollateral(uint256 _amount) public payable {
+        tokenDelegator.mint{value: _amount}();
+
+        BorrowBalance storage userBorrowBalance = userBorrow[msg.sender];
+        userBorrowBalance.supply += _amount;
+    }
+
+    function borrow(uint256 _amount) public {
+        BorrowBalance storage userBorrowBalance = userBorrow[msg.sender];
+        require(
+            tokenDelegator.borrow(_amount) == 0,
+            "DyBEP20Venus::Borrowing failed"
+        );
+
+        userBorrowBalance.loan += _amount;
+    }
+
+    function repay(uint256 _amount) public payable {
+        BorrowBalance storage userBorrowBalance = userBorrow[msg.sender];
+        tokenDelegator.repayBorrow{value: _amount}();
+
+        userBorrowBalance.loan -= _amount;
     }
 }

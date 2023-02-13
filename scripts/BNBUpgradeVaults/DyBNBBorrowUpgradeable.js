@@ -15,28 +15,13 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const DyBUSDVenus = await hre.ethers.getContractFactory("DyBEP20VenusProxy");
-  const dyBUSDVenus = await upgrades.deployProxy(DyBUSDVenus, [
-    "0x634f032e9b1ffa4Fd268b8AF836AAD331afdA488", // BorrowVenus
-    "0x8301F2213c0eeD49a7E28Ae4c3e91722919B8B47", // BUSD
-    "Dynamic BUSD",
-    "DyBUSD",
-    "0x08e0A5575De71037aE36AbfAfb516595fE68e5e4", // vBUSD
-    "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D", // Unitroller
-    "0xB9e0E753630434d7863528cc73CB7AC638a7c8ff", // xvsAddress
-    "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd", // WBNB
-    "0xA11c8D9DC9b66E209Ef60F0C8D969D3CD988782c", // USD
-    "0xD99D1c33F9fC3444f8101754aBC46c52416550D1", // Pancake Router
-    {
-      leverageLevel: 15000,
-      leverageBips: 10000,
-      minMinting: "10000", // 0.1 USDT
-    },
-  ]);
 
-  await dyBUSDVenus.deployed();
+  const DY_BORROW_BNB_ADDRESS = "0x634f032e9b1ffa4Fd268b8AF836AAD331afdA488";
 
-  console.log("DyBUSDVenus deployed to:", dyBUSDVenus.address);
+  const DyBorrowVenus = await hre.ethers.getContractFactory("DyBNBBorrow");
+  await upgrades.upgradeProxy(DY_BORROW_BNB_ADDRESS, DyBorrowVenus);
+
+  console.log("DyBUSDVenus upgraded successfully");
 }
 
 // We recommend this pattern to be able to use async/await everywhere
