@@ -17,7 +17,7 @@ async function main() {
   // We get the contract to deploy
   const SWAP_CONTRACT_ADDRESS = "0x4abccdd52E3BCbEE3C5Df743B4f82FEbC860Ac63";
 
-  const CrossChain = await hre.ethers.getContractFactory("DyBEP20Venus");
+  const CrossChain = await hre.ethers.getContractFactory("CrossChain");
   await upgrades.upgradeProxy(SWAP_CONTRACT_ADDRESS, CrossChain);
 
   console.log("CrossChain upgraded successfully");
