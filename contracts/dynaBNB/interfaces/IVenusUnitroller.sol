@@ -19,6 +19,8 @@ interface IVenusUnitroller {
         external
         returns (uint256[] memory);
 
+    function exitMarket(address vToken) external returns (uint256);
+
     function markets(address vTokenAddress)
         external
         view

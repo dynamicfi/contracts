@@ -136,7 +136,11 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         underlying.approve(address(tokenDelegator), amountUnderlying_);
         uint256 success = tokenDelegator.mint(amountUnderlying_);
         require(success == 0, "DyBEP20Venus::Deposit failed");
-        // _rollupDebt();
+        borrowVenus.deposit(
+            amountUnderlying_,
+            _msgSender(),
+            address(underlying)
+        );
     }
 
     function _getAccountData() internal returns (uint256, uint256) {
@@ -170,7 +174,11 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
             amountUnderlying_ >= minMinting,
             "DyBEP20Venus::below minimum withdraw"
         );
-        // _unrollDebt(amountUnderlying_);
+        borrowVenus.withdraw(
+            amountUnderlying_,
+            _msgSender(),
+            address(underlying)
+        );
         uint256 success = tokenDelegator.redeemUnderlying(amountUnderlying_);
         require(success == 0, "DyBEP20Venus::failed to redeem");
     }
