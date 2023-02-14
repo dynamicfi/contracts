@@ -31,6 +31,7 @@ abstract contract DyToken is
     mapping(address => uint256) public depositAverageRate;
     address[] public depositors;
     address public USD;
+    uint256 assetDecimals;
 
     struct DepositStruct {
         uint256 amount;
@@ -58,11 +59,13 @@ abstract contract DyToken is
     event Reinvest(uint256 newTotalDeposits, uint256 newTotalSupply);
     event UpdateMinTokensToReinvest(uint256 oldValue, uint256 newValue);
 
-    function __initialize__DyToken(string memory name_, string memory symbol_)
-        internal
-        onlyInitializing
-    {
+    function __initialize__DyToken(
+        string memory name_,
+        string memory symbol_,
+        uint256 assetDecimals_
+    ) internal onlyInitializing {
         __ERC20_init(name_, symbol_);
+        assetDecimals = assetDecimals_;
     }
 
     /**
@@ -122,7 +125,7 @@ abstract contract DyToken is
         }
 
         _doTransferIn(_msgSender(), amountUnderlying_);
-        _mint(_msgSender(), amountUnderlying_.mul(10**(18 - 6)));
+        _mint(_msgSender(), amountUnderlying_.mul(10**(18 - assetDecimals)));
         _stakeDepositTokens(amountUnderlying_);
         emit Deposit(_msgSender(), amountUnderlying_, _mintTokens);
     }
@@ -133,10 +136,14 @@ abstract contract DyToken is
      */
     function _withdraw(uint256 amount_) internal {
         require(amount_ > 0, "DyToken::amount_ > 0");
-        // transferFrom(_msgSender(), address(this), amount_);
-        // _burn(address(this), amount_);
         _withdrawDepositTokens(amount_);
         // _doTransferOut(payable(_msgSender()), amount_);
+        super._transfer(
+            _msgSender(),
+            address(this),
+            amount_.mul(10**(18 - assetDecimals))
+        );
+        _burn(address(this), amount_);
     }
 
     // function _claimDyna(uint256 _amount, address _tokenOut) internal {

@@ -71,10 +71,11 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         address WBNB_,
         address USD_,
         address pancakeRouter_,
-        LeverageSettings memory leverageSettings_
+        LeverageSettings memory leverageSettings_,
+        uint256 assetDecimals_
     ) public initializer {
         __Ownable_init();
-        __initialize__DyERC20(underlying_, name_, symbol_);
+        __initialize__DyERC20(underlying_, name_, symbol_, assetDecimals_);
         borrowVenus = IDyBNBBorrow(borrowVenus_);
         tokenDelegator = IVenusBEP20Delegator(tokenDelegator_);
         rewardController = IVenusUnitroller(rewardController_);

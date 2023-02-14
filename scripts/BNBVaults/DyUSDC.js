@@ -32,6 +32,7 @@ async function main() {
       leverageBips: 10000,
       minMinting: "10000", // 0.1 USDT
     },
+    "6",
   ]);
 
   await dyUSDCVenus.deployed();
