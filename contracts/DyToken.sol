@@ -133,8 +133,8 @@ abstract contract DyToken is
      */
     function _withdraw(uint256 amount_) internal {
         require(amount_ > 0, "DyToken::amount_ > 0");
-        transferFrom(_msgSender(), address(this), amount_);
-        _burn(address(this), amount_);
+        // transferFrom(_msgSender(), address(this), amount_);
+        // _burn(address(this), amount_);
         _withdrawDepositTokens(amount_);
         // _doTransferOut(payable(_msgSender()), amount_);
     }
