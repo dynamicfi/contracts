@@ -170,26 +170,28 @@ contract DyBNBBorrow is
             underlying_
         ];
 
-        uint256 redeemableUnderlying = getRedeemableAmount(underlying_);
+        // uint256 redeemableUnderlying = getRedeemableAmount(underlying_);
 
-        require(
-            redeemableUnderlying > 0,
-            "[DyBEP20BorrowVenus]::Not enough redeemable assets"
-        );
+        // require(
+        //     redeemableUnderlying > 0,
+        //     "[DyBEP20BorrowVenus]::Not enough redeemable assets"
+        // );
 
-        uint256 finalRedeemableAmount = 0;
-        if (
-            redeemableUnderlying <=
-            underlyingBalanceAmount.mul(borrowDivisor.sub(borrowFees)).div(
-                borrowDivisor
-            )
-        ) {
-            finalRedeemableAmount = redeemableUnderlying;
-        } else {
-            finalRedeemableAmount = underlyingBalanceAmount
-                .mul(borrowDivisor.sub(borrowFees))
-                .div(borrowDivisor);
-        }
+        uint256 finalRedeemableAmount = underlyingBalanceAmount
+            .mul(borrowDivisor.sub(borrowFees))
+            .div(borrowDivisor);
+        // if (
+        //     redeemableUnderlying <=
+        //     underlyingBalanceAmount.mul(borrowDivisor.sub(borrowFees)).div(
+        //         borrowDivisor
+        //     )
+        // ) {
+        //     finalRedeemableAmount = redeemableUnderlying;
+        // } else {
+        //     finalRedeemableAmount = underlyingBalanceAmount
+        //         .mul(borrowDivisor.sub(borrowFees))
+        //         .div(borrowDivisor);
+        // }
 
         uint256 success = tokenDelegator.redeemUnderlying(
             finalRedeemableAmount
@@ -197,10 +199,10 @@ contract DyBNBBorrow is
         require(success == 0, "[DyBEP20BorrowVenus]::Failed to redeem");
 
         if (underlying_ == WBNB) {
-            (bool success, ) = withdrawer_.call{value: address(this).balance}(
-                ""
-            );
-            require(success, "Transfer ETH failed");
+            (bool transferSuccess, ) = withdrawer_.call{
+                value: address(this).balance
+            }("");
+            require(transferSuccess, "Transfer ETH failed");
         } else {
             uint256 redeemedUnderlyingBalance = underlying.balanceOf(
                 address(this)
