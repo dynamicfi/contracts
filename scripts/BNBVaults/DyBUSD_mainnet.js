@@ -17,7 +17,7 @@ async function main() {
   // We get the contract to deploy
   const DyBUSDVenus = await hre.ethers.getContractFactory("DyBEP20VenusProxy");
   const dyBUSDVenus = await upgrades.deployProxy(DyBUSDVenus, [
-    "0x0b6fF7031993da9869807604Ec133Ed41ABAAAee", // BorrowVenus
+    "0xc65ee8150C42646Ec14ab7c6070d9623c733aA1E", // BorrowVenus
     "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56", // BUSD
     "Dynamic BUSD",
     "DyBUSD",
@@ -31,7 +31,7 @@ async function main() {
       leverageLevel: 15000,
       leverageBips: 10000,
       minMinting: "10000", // 0.1 USDT
-    },
+    }
   ]);
 
   await dyBUSDVenus.deployed();
