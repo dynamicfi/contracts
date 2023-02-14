@@ -31,7 +31,6 @@ abstract contract DyToken is
     mapping(address => uint256) public depositAverageRate;
     address[] public depositors;
     address public USD;
-    uint256 assetDecimals;
 
     struct DepositStruct {
         uint256 amount;
@@ -58,6 +57,7 @@ abstract contract DyToken is
     event DepositsEnabled(bool newValue);
     event Reinvest(uint256 newTotalDeposits, uint256 newTotalSupply);
     event UpdateMinTokensToReinvest(uint256 oldValue, uint256 newValue);
+    uint256 assetDecimals;
 
     function __initialize__DyToken(
         string memory name_,
