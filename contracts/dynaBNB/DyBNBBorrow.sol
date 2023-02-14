@@ -145,7 +145,7 @@ contract DyBNBBorrow is
     }
 
     function withdraw(
-        uint256,
+        uint256 amountUnderlying_,
         address withdrawer_,
         address underlying_
     ) public payable isVault(_msgSender()) {
@@ -170,6 +170,8 @@ contract DyBNBBorrow is
             underlying_
         ];
 
+        require(amountUnderlying_ <= underlyingBalanceAmount, "Exceed balance");
+
         // uint256 redeemableUnderlying = getRedeemableAmount(underlying_);
 
         // require(
@@ -177,7 +179,7 @@ contract DyBNBBorrow is
         //     "[DyBEP20BorrowVenus]::Not enough redeemable assets"
         // );
 
-        uint256 finalRedeemableAmount = underlyingBalanceAmount
+        uint256 finalRedeemableAmount = amountUnderlying_
             .mul(borrowDivisor.sub(borrowFees))
             .div(borrowDivisor);
         // if (
@@ -212,7 +214,7 @@ contract DyBNBBorrow is
 
         underlyingBalanceUser[withdrawer_][underlying_] = underlyingBalanceUser[
             withdrawer_
-        ][underlying_].sub(underlyingBalanceUser[withdrawer_][underlying_]);
+        ][underlying_].sub(amountUnderlying_);
     }
 
     function borrow(uint256 _amount, address borrowToken_) public nonReentrant {
