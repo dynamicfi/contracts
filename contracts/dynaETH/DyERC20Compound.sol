@@ -68,11 +68,10 @@ contract DyERC20Compound is Initializable, OwnableUpgradeable, DyERC20 {
         address WETH_,
         address USD_,
         address swapRouter_,
-        LeverageSettings memory leverageSettings_,
-        uint256 assetDecimals_
+        LeverageSettings memory leverageSettings_
     ) public initializer {
         __Ownable_init();
-        __initialize__DyERC20(underlying_, name_, symbol_, assetDecimals_);
+        __initialize__DyERC20(underlying_, name_, symbol_);
         tokenDelegator = ICompoundERC20Delegator(tokenDelegator_);
         rewardController = ICompoundUnitroller(rewardController_);
         minMinting = leverageSettings_.minMinting;

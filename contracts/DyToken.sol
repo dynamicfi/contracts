@@ -57,15 +57,15 @@ abstract contract DyToken is
     event DepositsEnabled(bool newValue);
     event Reinvest(uint256 newTotalDeposits, uint256 newTotalSupply);
     event UpdateMinTokensToReinvest(uint256 oldValue, uint256 newValue);
-    uint256 assetDecimals;
 
-    function __initialize__DyToken(
-        string memory name_,
-        string memory symbol_,
-        uint256 assetDecimals_
-    ) internal onlyInitializing {
+    // uint256 assetDecimals;
+
+    function __initialize__DyToken(string memory name_, string memory symbol_)
+        internal
+        onlyInitializing
+    {
         __ERC20_init(name_, symbol_);
-        assetDecimals = assetDecimals_;
+        // assetDecimals = assetDecimals_;
     }
 
     /**
@@ -125,7 +125,7 @@ abstract contract DyToken is
         }
 
         _doTransferIn(_msgSender(), amountUnderlying_);
-        _mint(_msgSender(), amountUnderlying_.mul(10**(18 - assetDecimals)));
+        _mint(_msgSender(), amountUnderlying_);
         _stakeDepositTokens(amountUnderlying_);
         emit Deposit(_msgSender(), amountUnderlying_, _mintTokens);
     }
@@ -138,11 +138,7 @@ abstract contract DyToken is
         require(amount_ > 0, "DyToken::amount_ > 0");
         _withdrawDepositTokens(amount_);
         // _doTransferOut(payable(_msgSender()), amount_);
-        super._transfer(
-            _msgSender(),
-            address(this),
-            amount_.mul(10**(18 - assetDecimals))
-        );
+        super._transfer(_msgSender(), address(this), amount_);
         _burn(address(this), amount_);
     }
 

@@ -28,10 +28,13 @@ abstract contract DyERC20 is DyToken {
     function __initialize__DyERC20(
         address underlying_,
         string memory name_,
-        string memory symbol_,
-        uint256 assetDecimals_
-    ) internal onlyInitializing {
-        __initialize__DyToken(name_, symbol_, assetDecimals_);
+        string memory symbol_
+    )
+        internal
+        // uint256 assetDecimals_
+        onlyInitializing
+    {
+        __initialize__DyToken(name_, symbol_);
         underlying = IERC20Upgradeable(underlying_);
         totalValues = [0, 1000000, 10000000, 100000000, 1000000000]; // for total value in dollar
         percentByValues = [6, 5, 5, 5, 2];
