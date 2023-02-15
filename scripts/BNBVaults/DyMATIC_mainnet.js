@@ -15,12 +15,12 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const DyUSDCVenus = await hre.ethers.getContractFactory("DyBEP20VenusProxy");
-  const dyUSDCVenus = await upgrades.deployProxy(DyUSDCVenus, [
+  const DyMATICVenus = await hre.ethers.getContractFactory("DyBEP20VenusProxy");
+  const dyMATICVenus = await upgrades.deployProxy(DyMATICVenus, [
     "0xAa6697f60D6EE712871C4933fAeF25E4051038ff", // BorrowVenus
     "0xcc42724c6683b7e57334c4e856f4c9965ed682bd", // MATIC
-    "Dynamic USDC",
-    "DyUSDC",
+    "Dynamic MATIC",
+    "DyMATIC",
     "0x5c9476fcd6a4f9a3654139721c949c2233bbbbc8", // vMATIC
     "0xfD36E2c2a6789Db23113685031d7F16329158384", // Unitroller
     "0xcF6BB5389c92Bdda8a3747Ddb454cB7a64626C63", // xvsAddress
@@ -35,9 +35,9 @@ async function main() {
     "18",
   ]);
 
-  await dyUSDCVenus.deployed();
+  await dyMATICVenus.deployed();
 
-  console.log("DyUSDCVenus deployed to:", dyUSDCVenus.address);
+  console.log("DyMATICVenus deployed to:", dyMATICVenus.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

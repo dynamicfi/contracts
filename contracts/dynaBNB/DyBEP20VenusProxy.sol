@@ -90,7 +90,7 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
 
     function deposit(uint256 amountUnderlying_) public override(DyERC20) {
         super.deposit(amountUnderlying_);
-        emit TrackingDeposit(amountUnderlying_, _getVaultValueInDollar());
+        // emit TrackingDeposit(amountUnderlying_, _getVaultValueInDollar());
         emit TrackingUserDeposit(_msgSender(), amountUnderlying_);
     }
 
@@ -100,7 +100,7 @@ contract DyBEP20VenusProxy is Initializable, OwnableUpgradeable, DyERC20 {
         uint256 reward = user.rewardBalance;
         user.rewardBalance = 0;
         underlying.transferFrom(address(this), _msgSender(), reward);
-        emit TrackingWithdraw(amount_, _getVaultValueInDollar());
+        // emit TrackingWithdraw(amount_, _getVaultValueInDollar());
         emit TrackingUserWithdraw(_msgSender(), amount_);
     }
 

@@ -19,9 +19,9 @@ async function main() {
   const dyXRPVenus = await upgrades.deployProxy(DyXRPVenus, [
     "0xAa6697f60D6EE712871C4933fAeF25E4051038ff", // BorrowVenus
     "0x1D2F0da169ceB9fC7B3144628dB156f3F6c60dBE", // XRP
-    "Dynamic USDC",
-    "DyUSDC",
-    "0xB248a295732e0225acd3337607cc01068e3b9c10", // vUSDC
+    "Dynamic XRP",
+    "DyXRP",
+    "0xB248a295732e0225acd3337607cc01068e3b9c10", // vXRP
     "0xfD36E2c2a6789Db23113685031d7F16329158384", // Unitroller
     "0xcF6BB5389c92Bdda8a3747Ddb454cB7a64626C63", // xvsAddress
     "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", // WBNB

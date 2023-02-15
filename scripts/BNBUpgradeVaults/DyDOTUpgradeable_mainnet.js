@@ -15,29 +15,13 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const DyLTCVenus = await hre.ethers.getContractFactory("DyBEP20VenusProxy");
-  const dyLTCVenus = await upgrades.deployProxy(DyLTCVenus, [
-    "0xAa6697f60D6EE712871C4933fAeF25E4051038ff", // BorrowVenus
-    "0x4338665cbb7b2485a8855a139b75d5e34ab0db94", // LTC
-    "Dynamic LTC",
-    "DyLTC",
-    "0x57a5297f2cb2c0aac9d554660acd6d385ab50c6b", // vLTC
-    "0xfD36E2c2a6789Db23113685031d7F16329158384", // Unitroller
-    "0xcF6BB5389c92Bdda8a3747Ddb454cB7a64626C63", // xvsAddress
-    "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", // WBNB
-    "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d", // USD
-    "0x10ED43C718714eb63d5aA57B78B54704E256024E", // Pancake Router
-    {
-      leverageLevel: 15000,
-      leverageBips: 10000,
-      minMinting: "1000000000", // 0.1 USDT
-    },
-    "18",
-  ]);
 
-  await dyLTCVenus.deployed();
+  const DY_DOT_ADDRESS = "0x1ccd19d2Cf70deE0c5a2Db1066b96BeB18190D27";
 
-  console.log("DyLTCVenus deployed to:", dyLTCVenus.address);
+  const DyDOTVenus = await hre.ethers.getContractFactory("DyBEP20VenusProxy");
+  await upgrades.upgradeProxy(DY_DOT_ADDRESS, DyDOTVenus);
+
+  console.log("DyDOTVenus upgraded successfully");
 }
 
 // We recommend this pattern to be able to use async/await everywhere
