@@ -431,4 +431,15 @@ contract DyBNBBorrow is
         }
         return true;
     }
+
+    function setCertainDelegator(address underlying_, address delegator_)
+        public
+        onlyOwner
+    {
+        delegator[underlying_] = delegator_;
+    }
+
+    function setAsset(address[] memory assets) public onlyOwner {
+        vaults = assets;
+    }
 }
