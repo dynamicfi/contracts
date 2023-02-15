@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IVenusBEP20Delegator.sol";
 import "./interfaces/IVenusBNBDelegator.sol";
 import "./interfaces/IVenusUnitroller.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./interfaces/IPancakeRouter.sol";
 import "./interfaces/IPriceOracle.sol";
 
@@ -29,12 +28,8 @@ interface IERC20Decimal {
     function decimals() external view returns (uint256);
 }
 
-contract DyBNBBorrow is
-    Initializable,
-    OwnableUpgradeable,
-    ReentrancyGuardUpgradeable
-{
-    using SafeMathUpgradeable for uint256;
+contract DyBNBBorrowNonUpgrade is Ownable, ReentrancyGuard {
+    using SafeMath for uint256;
 
     // variables, structs and mappings
     uint256 borrowFees;
@@ -67,14 +62,12 @@ contract DyBNBBorrow is
 
     // constructor and functions
 
-    function initialize(
+    constructor(
         address rewardController_,
         uint256 borrowFees_,
         uint256 borrowDivisor_,
         address oracle_
-    ) public initializer {
-        __Ownable_init();
-
+    ) {
         rewardController = IVenusUnitroller(rewardController_);
         borrowFees = borrowFees_;
         borrowDivisor = borrowDivisor_;
@@ -121,7 +114,7 @@ contract DyBNBBorrow is
             "[DyBEP20BorrowVenus]::Underlying is not registered."
         );
 
-        IERC20Upgradeable underlying = IERC20Upgradeable(underlying_);
+        IERC20 underlying = IERC20(underlying_);
         IVenusBEP20Delegator tokenDelegator = IVenusBEP20Delegator(
             delegator[underlying_]
         );
@@ -160,7 +153,7 @@ contract DyBNBBorrow is
             "[DyBEP20BorrowVenus]::Need to pay borrowed"
         );
 
-        IERC20Upgradeable underlying = IERC20Upgradeable(underlying_);
+        IERC20 underlying = IERC20(underlying_);
         IVenusBEP20Delegator tokenDelegator = IVenusBEP20Delegator(
             delegator[underlying_]
         );
@@ -196,10 +189,10 @@ contract DyBNBBorrow is
         //         .div(borrowDivisor);
         // }
 
-        // uint256 success = tokenDelegator.redeemUnderlying(
-        //     finalRedeemableAmount
-        // );
-        // require(success == 0, "[DyBEP20BorrowVenus]::Failed to redeem");
+        uint256 success = tokenDelegator.redeemUnderlying(
+            finalRedeemableAmount
+        );
+        require(success == 0, "[DyBEP20BorrowVenus]::Failed to redeem");
 
         if (underlying_ == WBNB) {
             (bool transferSuccess, ) = withdrawer_.call{
@@ -207,10 +200,6 @@ contract DyBNBBorrow is
             }("");
             require(transferSuccess, "Transfer ETH failed");
         } else {
-            uint256 success = tokenDelegator.redeemUnderlying(
-                finalRedeemableAmount
-            );
-            require(success == 0, "[DyBEP20BorrowVenus]::Failed to redeem");
             uint256 redeemedUnderlyingBalance = underlying.balanceOf(
                 address(this)
             );
@@ -223,7 +212,7 @@ contract DyBNBBorrow is
     }
 
     function borrow(uint256 _amount, address borrowToken_) public nonReentrant {
-        IERC20Upgradeable borrowUnderlying = IERC20Upgradeable(borrowToken_);
+        IERC20 borrowUnderlying = IERC20(borrowToken_);
         IVenusBEP20Delegator borrowDelegator = IVenusBEP20Delegator(
             delegator[borrowToken_]
         );
@@ -256,7 +245,7 @@ contract DyBNBBorrow is
             "[DyBEP20BorrowVenus]::Underlying is not registered."
         );
 
-        IERC20Upgradeable borrowUnderlying = IERC20Upgradeable(borrowToken_);
+        IERC20 borrowUnderlying = IERC20(borrowToken_);
         IVenusBEP20Delegator borrowDelegator = IVenusBEP20Delegator(
             delegator[borrowToken_]
         );

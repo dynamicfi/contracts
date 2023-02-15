@@ -14,28 +14,14 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const DyBNBVenus = await hre.ethers.getContractFactory("DyBNBVenusProxy");
-
-  const dyBNBVenus = await DyBNBVenus.deploy(
-    "0xf50d28e00a4834bCbb1A167ecfEb72E5F38e4b0F", // BorrowVenus
-    "Dynamic BNB",
-    "DyBNB",
-    "0x2E7222e51c0f6e98610A1543Aa3836E092CDe62c", // cBNB
-    "0x94d1820b2D1c7c7452A163983Dc888CEC546b77D", // Unitroller
-    "0xB9e0E753630434d7863528cc73CB7AC638a7c8ff", // xvsAddress
-    "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd", // WBNB
-    "0xA11c8D9DC9b66E209Ef60F0C8D969D3CD988782c", // USD
-    "0xD99D1c33F9fC3444f8101754aBC46c52416550D1", // Pancake Router
-    {
-      leverageLevel: 15000,
-      leverageBips: 10000,
-      minMinting: "10000000000000000", // 0.01 BNB
-    }
+  const NormalDeploy = await hre.ethers.getContractFactory("MiddleProtocol");
+  const normalDeploy = await NormalDeploy.deploy(
+    "0x0878025B1D4362c3787121BFE7668a3fE031dB4C"
   );
 
-  await dyBNBVenus.deployed();
+  await normalDeploy.deployed();
 
-  console.log("DyBNBCompound deployed to:", dyBNBVenus.address);
+  console.log("NormalDeploy deployed to:", normalDeploy.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
