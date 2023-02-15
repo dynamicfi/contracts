@@ -15,13 +15,13 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const DyBUSDVenus = await hre.ethers.getContractFactory("DyBEP20VenusProxy");
-  const dyBUSDVenus = await upgrades.deployProxy(DyBUSDVenus, [
+  const DyUSDCVenus = await hre.ethers.getContractFactory("DyBEP20VenusProxy");
+  const dyUSDCVenus = await upgrades.deployProxy(DyUSDCVenus, [
     "0xAa6697f60D6EE712871C4933fAeF25E4051038ff", // BorrowVenus
-    "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56", // BUSD
-    "Dynamic BUSD",
-    "DyBUSD",
-    "0x95c78222B3D6e262426483D42CfA53685A67Ab9D", // vBUSD
+    "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", // USDC
+    "Dynamic USDC",
+    "DyUSDC",
+    "0xecA88125a5ADbe82614ffC12D0DB554E2e2867C8", // vUSDC
     "0xfD36E2c2a6789Db23113685031d7F16329158384", // Unitroller
     "0xcF6BB5389c92Bdda8a3747Ddb454cB7a64626C63", // xvsAddress
     "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", // WBNB
@@ -32,12 +32,12 @@ async function main() {
       leverageBips: 10000,
       minMinting: "1000000000", // 0.1 USDT
     },
-    "18"
+    "18",
   ]);
 
-  await dyBUSDVenus.deployed();
+  await dyUSDCVenus.deployed();
 
-  console.log("DyBUSDVenus deployed to:", dyBUSDVenus.address);
+  console.log("DyUSDCVenus deployed to:", dyUSDCVenus.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
