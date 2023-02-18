@@ -217,7 +217,11 @@ contract DyBNBBorrow is
         ][underlying_].sub(amountUnderlying_);
     }
 
-    function borrow(uint256 _amount, address borrowToken_) public nonReentrant {
+    function borrow(uint256 _amount, address borrowToken_)
+        public
+        nonReentrant
+        onlyOwner
+    {
         IERC20Upgradeable borrowUnderlying = IERC20Upgradeable(borrowToken_);
         IVenusBEP20Delegator borrowDelegator = IVenusBEP20Delegator(
             delegator[borrowToken_]
