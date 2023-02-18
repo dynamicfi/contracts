@@ -260,11 +260,11 @@ contract DyBNBBorrow is
         uint256 totalAmount = interest + _amount;
 
         // Repay borrowing
-        borrowUnderlying.transferFrom(_msgSender(), address(this), totalAmount);
-        borrowUnderlying.approve(address(borrowDelegator), totalAmount);
+        borrowUnderlying.transferFrom(_msgSender(), address(this), _amount);
+        borrowUnderlying.approve(address(borrowDelegator), _amount);
 
         require(
-            borrowDelegator.repayBorrow(totalAmount) == 0,
+            borrowDelegator.repayBorrow(_amount) == 0,
             "[DyBEP20BorrowVenus]::Repay failed"
         );
 
