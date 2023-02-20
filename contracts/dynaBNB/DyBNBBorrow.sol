@@ -7,6 +7,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./interfaces/IVenusBEP20Delegator.sol";
+import "./interfaces/IVenusBNBDelegator.sol";
 import "./interfaces/IVenusUnitroller.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "./interfaces/IPancakeRouter.sol";
@@ -127,10 +128,10 @@ contract DyBNBBorrow is
 
         // Supplying underlying
         if (underlying_ == WBNB) {
-            require(
-                tokenDelegator.mint(amount_) == 0,
-                "[DyBEP20BorrowVenus]::Supplying failed"
+            IVenusBNBDelegator bnbDelegator = IVenusBNBDelegator(
+                delegator[underlying_]
             );
+            bnbDelegator.mint{value: amount_};
         } else {
             underlying.transferFrom(_msgSender(), address(this), amount_);
             underlying.approve(address(tokenDelegator), amount_);
@@ -154,8 +155,13 @@ contract DyBNBBorrow is
             "[DyBEP20BorrowVenus]::Underlying is not registered."
         );
 
+        uint256 withdrawableAmount = getWithdrawableAmount(
+            withdrawer_,
+            underlying_
+        );
+
         require(
-            checkCanWithdraw(withdrawer_) == true,
+            amountUnderlying_ <= withdrawableAmount,
             "[DyBEP20BorrowVenus]::Need to pay borrowed"
         );
 
@@ -331,8 +337,40 @@ contract DyBNBBorrow is
             delegator[borrowToken_]
         );
 
+        (
+            uint256 underlyingInDollars,
+            uint256 borrowInDollars
+        ) = getUserEquivalentAssetAndBorrow(user_);
+
+        uint256 underlyingPrice = oracle.getUnderlyingPrice(
+            delegator[borrowToken_]
+        );
+
+        (, uint256 borrowLimit) = rewardController.markets(
+            address(borrowDelegator)
+        );
+
+        uint256 userBorrowableAmountRaw = underlyingInDollars
+            .mul(borrowLimit)
+            .div(BIPS)
+            .sub(borrowInDollars)
+            .mul(underlyingPrice)
+            .div(BIPS);
+        uint256 borrowableAmountRaw = getBorrowableAmount(borrowToken_);
+        if (userBorrowableAmountRaw > borrowableAmountRaw) {
+            return borrowableAmountRaw;
+        }
+        return userBorrowableAmountRaw;
+    }
+
+    function getUserEquivalentAssetAndBorrow(address user_)
+        public
+        view
+        returns (uint256, uint256)
+    {
         uint256 underlyingInDollars = 0;
         uint256 borrowInDollars = 0;
+
         for (uint256 i = 0; i < vaults.length; i++) {
             address tokenAddress = vaults[i];
             uint256 tokenPrice = oracle.getUnderlyingPrice(
@@ -348,28 +386,7 @@ contract DyBNBBorrow is
             );
         }
 
-        uint256 borrowableAmountInDollar = underlyingInDollars.sub(
-            borrowInDollars
-        );
-
-        uint256 underlyingPrice = oracle.getUnderlyingPrice(
-            delegator[borrowToken_]
-        );
-
-        (, uint256 borrowLimit) = rewardController.markets(
-            address(borrowDelegator)
-        );
-
-        uint256 userBorrowableAmountRaw = borrowableAmountInDollar
-            .mul(underlyingPrice)
-            .div(BIPS)
-            .mul(borrowLimit)
-            .div(BIPS);
-        uint256 borrowableAmountRaw = getBorrowableAmount(borrowToken_);
-        if (userBorrowableAmountRaw > borrowableAmountRaw) {
-            return borrowableAmountRaw;
-        }
-        return userBorrowableAmountRaw;
+        return (underlyingInDollars, borrowInDollars);
     }
 
     function getBorrowedAmount(address user_, address borrowToken_)
@@ -427,13 +444,25 @@ contract DyBNBBorrow is
         return vaults_;
     }
 
-    function checkCanWithdraw(address user_) public view returns (bool) {
-        for (uint256 i = 0; i < vaults.length; i++) {
-            if (borrowingAmount[user_][vaults[i]] > 0) {
-                return false;
-            }
-        }
-        return true;
+    function getWithdrawableAmount(address user_, address token_)
+        public
+        view
+        returns (uint256)
+    {
+        (
+            uint256 underlyingInDollars,
+            uint256 borrowInDollars
+        ) = getUserEquivalentAssetAndBorrow(user_);
+
+        uint256 underlyingPrice = oracle.getUnderlyingPrice(delegator[token_]);
+
+        (, uint256 borrowLimit) = rewardController.markets(address(token_));
+
+        return
+            underlyingInDollars
+                .sub(borrowInDollars.mul(BIPS).div(borrowLimit))
+                .mul(underlyingPrice)
+                .div(BIPS);
     }
 
     function setCertainDelegator(address underlying_, address delegator_)
