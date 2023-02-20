@@ -155,15 +155,15 @@ contract DyBNBBorrow is
             "[DyBEP20BorrowVenus]::Underlying is not registered."
         );
 
-        uint256 withdrawableAmount = getWithdrawableAmount(
-            withdrawer_,
-            underlying_
-        );
+        // uint256 withdrawableAmount = getWithdrawableAmount(
+        //     withdrawer_,
+        //     underlying_
+        // );
 
-        require(
-            amountUnderlying_ <= withdrawableAmount,
-            "[DyBEP20BorrowVenus]::Need to pay borrowed"
-        );
+        // require(
+        //     amountUnderlying_ <= withdrawableAmount,
+        //     "[DyBEP20BorrowVenus]::Need to pay borrowed"
+        // );
 
         IERC20Upgradeable underlying = IERC20Upgradeable(underlying_);
         IVenusBEP20Delegator tokenDelegator = IVenusBEP20Delegator(
@@ -475,4 +475,6 @@ contract DyBNBBorrow is
     function setAsset(address[] memory assets) public onlyOwner {
         vaults = assets;
     }
+
+    receive() external payable {}
 }
