@@ -124,7 +124,9 @@ contract StakingDynaLP is Ownable, ReentrancyGuard {
                 : stakeDetail.firstStakeAt;
             stakeDetail.lastProcessAt = block.timestamp;
         } else {
-            stakeDetail.principal = stakeDetail.principal.add(_stakeAmount);
+            uint256 interest = getInterest(msg.sender);
+            stakeDetail.principal = stakeDetail.principal.add(_stakeAmount).add(interest);
+            stakeDetail.lastProcessAt = block.timestamp;
         }
 
         emit Deposit(msg.sender, _stakeAmount);
