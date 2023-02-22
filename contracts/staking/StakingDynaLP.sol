@@ -6,8 +6,9 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IPancakePair.sol";
 import "./interfaces/IPancakeRouter.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract StakingDynaLP is Ownable {
+contract StakingDynaLP is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeMath for uint112;
 
@@ -22,6 +23,14 @@ contract StakingDynaLP is Ownable {
     IPancakePair public pair;
 
     bool public enabled;
+
+    modifier noContract() {
+        require(
+            tx.origin == msg.sender,
+            "StakingDynaLP: Contract not allowed to interact"
+        );
+        _;
+    }
 
     event Deposit(address indexed user, uint256 amount);
     event Redeem(address indexed user, uint256 amount);
@@ -100,7 +109,7 @@ contract StakingDynaLP is Ownable {
             );
     }
 
-    function deposit(uint256 _stakeAmount) external {
+    function deposit(uint256 _stakeAmount) external nonReentrant noContract {
         require(enabled, "Staking is not enabled");
         require(
             _stakeAmount > 0,
@@ -136,7 +145,7 @@ contract StakingDynaLP is Ownable {
         return amounts[1];
     }
 
-    function redeem(uint256 _redeemAmount) external {
+    function redeem(uint256 _redeemAmount) external nonReentrant noContract {
         require(enabled, "Staking is not enabled");
         StakeDetail storage stakeDetail = stakers[msg.sender];
         require(stakeDetail.firstStakeAt > 0, "StakingDynaLP: no stake");
