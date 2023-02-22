@@ -4,8 +4,9 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract StakingDYNA is Ownable {
+contract StakingDYNA is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     uint256 public apr = 3200;
     uint256 constant RATE_PRECISION = 10000;
@@ -16,6 +17,14 @@ contract StakingDYNA is Ownable {
     IERC20 public token;
 
     bool public enabled;
+
+    modifier noContract() {
+        require(
+            tx.origin == msg.sender,
+            "StakingDYNA: Contract not allowed to interact"
+        );
+        _;
+    }
 
     event Deposit(address indexed user, uint256 amount);
     event Redeem(address indexed user, uint256 amount);
@@ -76,7 +85,7 @@ contract StakingDYNA is Ownable {
         return interest.add(stakeDetail.pendingReward);
     }
 
-    function deposit(uint256 _stakeAmount) external {
+    function deposit(uint256 _stakeAmount) external nonReentrant noContract {
         require(enabled, "Staking is not enabled");
         require(
             _stakeAmount > 0,
@@ -97,7 +106,7 @@ contract StakingDYNA is Ownable {
         emit Deposit(msg.sender, _stakeAmount);
     }
 
-    function redeem(uint256 _redeemAmount) external {
+    function redeem(uint256 _redeemAmount) external nonReentrant noContract {
         require(enabled, "Staking is not enabled");
         StakeDetail storage stakeDetail = stakers[msg.sender];
         require(stakeDetail.firstStakeAt > 0, "StakingDYNA: no stake");

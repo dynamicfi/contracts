@@ -5,12 +5,21 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Staking is Ownable {
+contract Staking is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeMath for uint112;
     using Counters for Counters.Counter;
     Counters.Counter internal _tokenIdCounter;
+
+    modifier noContract() {
+        require(
+            tx.origin == msg.sender,
+            "Staking: Contract not allowed to interact"
+        );
+        _;
+    }
 
     event Stake(
         address indexed _from,
@@ -88,7 +97,7 @@ contract Staking is Ownable {
         terms[_term] = _interestRate;
     }
 
-    function stake(uint256 _amount, uint256 _duration) external {
+    function stake(uint256 _amount, uint256 _duration) external nonReentrant noContract {
         require(enabled, "Staking: Staking is disabled");
         require(_amount >= 1e18, "Staking: Amount must be >= 1 token");
         require(terms[_duration] > 0, "Staking: Term is not supported");
@@ -137,7 +146,7 @@ contract Staking is Ownable {
         return interest;
     }
 
-    function claim(uint256 _id) external onlyStakeholder(_id) {
+    function claim(uint256 _id) external onlyStakeholder(_id) nonReentrant noContract {
         uint256 interest = getInterest(_id);
         require(interest > 0, "Staking: No interest to claim");
         StakeDetail storage currentStake = idToStakeDetail[_id];
@@ -146,7 +155,7 @@ contract Staking is Ownable {
         emit Claim(msg.sender, _id, block.timestamp, interest);
     }
 
-    function withdraw(uint256 _id) external onlyStakeholder(_id) {
+    function withdraw(uint256 _id) external onlyStakeholder(_id) nonReentrant noContract {
         StakeDetail memory currentStake = idToStakeDetail[_id];
         require(
             block.timestamp >= currentStake.endAt,
