@@ -98,12 +98,13 @@ contract StakingDYNA is Ownable, ReentrancyGuard {
             stakeDetail.firstStakeAt = stakeDetail.firstStakeAt == 0
                 ? block.timestamp
                 : stakeDetail.firstStakeAt;
-            stakeDetail.lastProcessAt = block.timestamp;
         } else {
             uint256 interest = getInterest(msg.sender);
-            stakeDetail.principal = stakeDetail.principal.add(_stakeAmount).add(interest);
-            stakeDetail.lastProcessAt = block.timestamp;
+            stakeDetail.principal = stakeDetail.principal.add(_stakeAmount).add(
+                interest
+            );
         }
+        stakeDetail.lastProcessAt = block.timestamp;
 
         emit Deposit(msg.sender, _stakeAmount);
     }
