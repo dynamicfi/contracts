@@ -125,10 +125,13 @@ contract StakingLP3 is Ownable, ReentrancyGuard {
             stakeDetail.firstStakeAt = stakeDetail.firstStakeAt == 0
                 ? block.timestamp
                 : stakeDetail.firstStakeAt;
-            stakeDetail.lastProcessAt = block.timestamp;
         } else {
-            stakeDetail.principal = stakeDetail.principal.add(_stakeAmount);
+            uint256 interest = getInterest(msg.sender);
+            stakeDetail.principal = stakeDetail.principal.add(interest).add(
+                _stakeAmount
+            );
         }
+        stakeDetail.lastProcessAt = block.timestamp;
 
         emit Deposit(msg.sender, _stakeAmount);
     }
@@ -156,12 +159,15 @@ contract StakingLP3 is Ownable, ReentrancyGuard {
         uint256 claimAmount = interest.mul(_redeemAmount).div(
             stakeDetail.principal
         );
-        uint256 claimAmountInToken = claimAmount.mul(getPairPrice()).div(1e18).add(
-            stakeDetail.pendingReward
-        );
+        uint256 claimAmountInToken = claimAmount
+            .mul(getPairPrice())
+            .div(1e18)
+            .add(stakeDetail.pendingReward);
 
         uint256 remainAmount = interest.sub(claimAmount);
-        uint256 remainAmountInToken = remainAmount.mul(getPairPrice()).div(1e18);
+        uint256 remainAmountInToken = remainAmount.mul(getPairPrice()).div(
+            1e18
+        );
 
         stakeDetail.lastProcessAt = block.timestamp;
         require(

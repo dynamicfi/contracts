@@ -122,10 +122,13 @@ contract StakingDynaLP is Ownable, ReentrancyGuard {
             stakeDetail.firstStakeAt = stakeDetail.firstStakeAt == 0
                 ? block.timestamp
                 : stakeDetail.firstStakeAt;
-            stakeDetail.lastProcessAt = block.timestamp;
         } else {
-            stakeDetail.principal = stakeDetail.principal.add(_stakeAmount);
+            uint256 interest = getInterest(msg.sender);
+            stakeDetail.principal = stakeDetail.principal.add(_stakeAmount).add(
+                interest
+            );
         }
+        stakeDetail.lastProcessAt = block.timestamp;
 
         emit Deposit(msg.sender, _stakeAmount);
     }
@@ -156,7 +159,9 @@ contract StakingDynaLP is Ownable, ReentrancyGuard {
         uint256 claimAmountInToken = claimAmount.mul(getPairPrice()).div(1e18);
 
         uint256 remainAmount = interest.sub(claimAmount);
-        uint256 remainAmountInToken = remainAmount.mul(getPairPrice()).div(1e18);
+        uint256 remainAmountInToken = remainAmount.mul(getPairPrice()).div(
+            1e18
+        );
 
         stakeDetail.lastProcessAt = block.timestamp;
         require(
