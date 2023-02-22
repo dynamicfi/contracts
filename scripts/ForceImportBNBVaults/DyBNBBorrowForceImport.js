@@ -16,7 +16,7 @@ async function main() {
 
   // We get the contract to deploy
 
-  const DY_BUSD_ADDRESS = "0xAa6697f60D6EE712871C4933fAeF25E4051038ff";
+  const DY_BUSD_ADDRESS = "0xB683bF0390AC74000507ce56cdECDaCA75eb0CFf";
 
   const DyBUSDVenus = await hre.ethers.getContractFactory("DyBNBBorrow");
   await upgrades.forceImport(DY_BUSD_ADDRESS, DyBUSDVenus);

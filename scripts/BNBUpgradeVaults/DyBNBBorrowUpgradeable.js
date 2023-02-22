@@ -16,7 +16,7 @@ async function main() {
 
   // We get the contract to deploy
 
-  const DY_BORROW_BNB_ADDRESS = "0x634f032e9b1ffa4Fd268b8AF836AAD331afdA488";
+  const DY_BORROW_BNB_ADDRESS = "0xB683bF0390AC74000507ce56cdECDaCA75eb0CFf";
 
   const DyBorrowVenus = await hre.ethers.getContractFactory("DyBNBBorrow");
   await upgrades.upgradeProxy(DY_BORROW_BNB_ADDRESS, DyBorrowVenus);

@@ -17,7 +17,7 @@ async function main() {
   // We get the contract to deploy
   const DyUSDTVenus = await hre.ethers.getContractFactory("DyBEP20VenusProxy");
   const dyUSDTVenus = await upgrades.deployProxy(DyUSDTVenus, [
-    "0x634f032e9b1ffa4Fd268b8AF836AAD331afdA488", // BorrowVenus
+    "0xB683bF0390AC74000507ce56cdECDaCA75eb0CFf", // BorrowVenus
     "0xA11c8D9DC9b66E209Ef60F0C8D969D3CD988782c", // USDT
     "Dynamic USDT",
     "DyUSDT",

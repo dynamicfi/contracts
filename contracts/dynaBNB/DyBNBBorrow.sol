@@ -155,15 +155,15 @@ contract DyBNBBorrow is
             "[DyBEP20BorrowVenus]::Underlying is not registered."
         );
 
-        // uint256 withdrawableAmount = getWithdrawableAmount(
-        //     withdrawer_,
-        //     underlying_
-        // );
+        uint256 withdrawableAmount = getWithdrawableAmount(
+            withdrawer_,
+            underlying_
+        );
 
-        // require(
-        //     amountUnderlying_ <= withdrawableAmount,
-        //     "[DyBEP20BorrowVenus]::Need to pay borrowed"
-        // );
+        require(
+            amountUnderlying_ <= withdrawableAmount,
+            "[DyBEP20BorrowVenus]::Need to pay borrowed"
+        );
 
         IERC20Upgradeable underlying = IERC20Upgradeable(underlying_);
         IVenusBEP20Delegator tokenDelegator = IVenusBEP20Delegator(
@@ -429,6 +429,9 @@ contract DyBNBBorrow is
 
         uint256 redeemSafeteMargin = BIPS.mul(990).div(1000);
 
+        if (borrowLimit == 0) {
+            return underlyingBalance.mul(redeemSafeteMargin).div(BIPS);
+        }
         return
             underlyingBalance
                 .sub(borrowed.mul(BIPS).div(borrowLimit))
@@ -454,15 +457,31 @@ contract DyBNBBorrow is
             uint256 borrowInDollars
         ) = getUserEquivalentAssetAndBorrow(user_);
 
-        uint256 underlyingPrice = oracle.getUnderlyingPrice(delegator[token_]);
+        (uint256 underlyingPrice, uint256 borrowLimit) = getPriceAndBorrowLimit(
+            token_
+        );
 
-        (, uint256 borrowLimit) = rewardController.markets(address(token_));
+        if (borrowLimit == 0) {
+            return 0;
+        }
 
         return
             underlyingInDollars
                 .sub(borrowInDollars.mul(BIPS).div(borrowLimit))
                 .mul(underlyingPrice)
                 .div(BIPS);
+    }
+
+    function getPriceAndBorrowLimit(address token_)
+        public
+        view
+        returns (uint256, uint256)
+    {
+        uint256 underlyingPrice = oracle.getUnderlyingPrice(delegator[token_]);
+
+        (, uint256 borrowLimit) = rewardController.markets(token_);
+
+        return (underlyingPrice, borrowLimit);
     }
 
     function setCertainDelegator(address underlying_, address delegator_)
