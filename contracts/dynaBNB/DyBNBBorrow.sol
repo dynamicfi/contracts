@@ -54,6 +54,7 @@ contract DyBNBBorrow is
     mapping(address => mapping(address => uint256)) public borrowTimestamp;
     mapping(address => uint256) public BorrowAPY;
     mapping(address => bool) checkVaults;
+    mapping(address => uint256) public assetDecimals;
 
     // events
 
@@ -94,6 +95,10 @@ contract DyBNBBorrow is
 
     function setAPY(uint256 APY_, address token_) public onlyOwner {
         BorrowAPY[token_] = APY_;
+    }
+
+    function setDecimal(address token_, uint256 decimal_) public onlyOwner {
+        assetDecimals[token_] = decimal_;
     }
 
     function setCheckVault(bool bool_, address vault_) public onlyOwner {
@@ -155,10 +160,10 @@ contract DyBNBBorrow is
             "[DyBEP20BorrowVenus]::Underlying is not registered."
         );
 
-        uint256 withdrawableAmount = getWithdrawableAmount(
-            withdrawer_,
-            underlying_
-        );
+        (
+            uint256 withdrawableAmount,
+            uint256 borrowedAmount
+        ) = getWithdrawableAmount(withdrawer_, underlying_);
 
         require(
             amountUnderlying_ <= withdrawableAmount,
@@ -177,7 +182,12 @@ contract DyBNBBorrow is
         ];
 
         require(amountUnderlying_ <= underlyingBalanceAmount, "Exceed balance");
-
+        if (borrowedAmount > 0) {
+            require(
+                amountUnderlying_ < (underlyingBalanceAmount * 2) / 10,
+                "Need to repay"
+            );
+        }
         // uint256 redeemableUnderlying = getRedeemableAmount(underlying_);
 
         // require(
@@ -450,8 +460,9 @@ contract DyBNBBorrow is
     function getWithdrawableAmount(address user_, address token_)
         public
         view
-        returns (uint256)
+        returns (uint256, uint256)
     {
+        uint256 decimal = getDecimal(token_);
         (
             uint256 underlyingInDollars,
             uint256 borrowInDollars
@@ -462,14 +473,21 @@ contract DyBNBBorrow is
         );
 
         if (borrowLimit == 0) {
-            return 0;
+            return (0, borrowInDollars);
         }
 
-        return
-            underlyingInDollars
-                .sub(borrowInDollars.mul(BIPS).div(borrowLimit))
-                .mul(underlyingPrice)
-                .div(BIPS);
+        uint256 underlyingBalanceAmount = underlyingBalanceUser[user_][token_];
+
+        uint256 withdrawableAmount = underlyingInDollars
+            .sub(borrowInDollars.mul(BIPS).div(borrowLimit))
+            .mul(underlyingPrice)
+            .div(BIPS)
+            .div(10**(36 - 2 * decimal));
+
+        uint256 amount = withdrawableAmount > underlyingBalanceAmount
+            ? underlyingBalanceAmount
+            : withdrawableAmount;
+        return (amount, borrowInDollars);
     }
 
     function getPriceAndBorrowLimit(address token_)
@@ -479,7 +497,7 @@ contract DyBNBBorrow is
     {
         uint256 underlyingPrice = oracle.getUnderlyingPrice(delegator[token_]);
 
-        (, uint256 borrowLimit) = rewardController.markets(token_);
+        (, uint256 borrowLimit) = rewardController.markets(delegator[token_]);
 
         return (underlyingPrice, borrowLimit);
     }
@@ -493,6 +511,14 @@ contract DyBNBBorrow is
 
     function setAsset(address[] memory assets) public onlyOwner {
         vaults = assets;
+    }
+
+    function getDecimal(address token_) public view returns (uint256) {
+        uint256 decimal = assetDecimals[token_];
+        if (decimal == 0) {
+            return 18;
+        }
+        return assetDecimals[token_];
     }
 
     receive() external payable {}
