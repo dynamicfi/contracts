@@ -56,6 +56,11 @@ contract DyBNBBorrow is
     mapping(address => bool) checkVaults;
     mapping(address => uint256) public assetDecimals;
 
+    // updated variables
+    address[] public depositors;
+    mapping(address => mapping(address => uint256)) public tokenDeposited;
+    mapping(address => mapping(address => uint256)) public lastProcess;
+    mapping(address => mapping(address => uint256)) public reward;
     // events
 
     modifier isVault(address vault_) {
@@ -447,6 +452,13 @@ contract DyBNBBorrow is
                 .sub(borrowed.mul(BIPS).div(borrowLimit))
                 .mul(redeemSafeteMargin)
                 .div(BIPS);
+    }
+
+    function harvestAndDistributeReward() public onlyOwner {
+        // calculate product in each user in each vault
+        // calculate weight of each vault
+        // claim venus
+        // convert Venus to reward in each vault and map reward to each user
     }
 
     function getVaults() public view returns (address[] memory vaults_) {
