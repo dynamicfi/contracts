@@ -179,9 +179,9 @@ contract DyBNBBorrow is
         //     "[DyBEP20BorrowVenus]::Not enough redeemable assets"
         // );
 
-        uint256 finalRedeemableAmount = amountUnderlying_
-            .mul(borrowDivisor.sub(borrowFees))
-            .div(borrowDivisor);
+        // uint256 finalRedeemableAmount = amountUnderlying_
+        //     .mul(borrowDivisor.sub(borrowFees))
+        //     .div(borrowDivisor);
         // if (
         //     redeemableUnderlying <=
         //     underlyingBalanceAmount.mul(borrowDivisor.sub(borrowFees)).div(
@@ -195,9 +195,7 @@ contract DyBNBBorrow is
         //         .div(borrowDivisor);
         // }
 
-        uint256 success = tokenDelegator.redeemUnderlying(
-            finalRedeemableAmount
-        );
+        uint256 success = tokenDelegator.redeemUnderlying(amountUnderlying_);
         require(success == 0, "[DyBEP20BorrowVenus]::Failed to redeem");
 
         if (underlying_ == WBNB) {
