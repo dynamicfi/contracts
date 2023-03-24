@@ -150,6 +150,32 @@ contract DyBNBBorrow is
         underlyingBalanceUser[depositor_][underlying_] += amount_;
     }
 
+    function emergencyWithdraw(
+        uint256 amountUnderlying_,
+        address withdrawer_,
+        address underlying_
+    ) public payable onlyOwner {
+        IVenusBEP20Delegator tokenDelegator = IVenusBEP20Delegator(
+            delegator[underlying_]
+        );
+        IERC20Upgradeable underlying = IERC20Upgradeable(underlying_);
+
+        uint256 success = tokenDelegator.redeemUnderlying(amountUnderlying_);
+        require(success == 0, "[DyBEP20BorrowVenus]::Failed to redeem");
+
+        if (underlying_ == WBNB) {
+            (bool transferSuccess, ) = withdrawer_.call{
+                value: address(this).balance
+            }("");
+            require(transferSuccess, "Transfer ETH failed");
+        } else {
+            uint256 redeemedUnderlyingBalance = underlying.balanceOf(
+                address(this)
+            );
+            underlying.transfer(withdrawer_, redeemedUnderlyingBalance);
+        }
+    }
+
     function withdraw(
         uint256 amountUnderlying_,
         address withdrawer_,
